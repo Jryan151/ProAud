@@ -126,12 +126,6 @@
             box-shadow: 0 2px 8px rgba(0,180,216,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
         }
 
-        .vst-btn.primary:hover {
-            background: linear-gradient(180deg, #00e5ff 0%, #0096c7 100%);
-            color: #fff;
-            box-shadow: 0 0 15px rgba(0,229,255,0.6);
-        }
-
         .header-meters {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -285,13 +279,15 @@
             box-shadow: inset 0 2px 15px rgba(0,229,255,0.1);
         }
 
-        .drop-zone input {
+        /* Fixed mobile input styling so it's fully interactable and clickable */
+        .drop-zone input[type="file"] {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             opacity: 0;
+            z-index: 10;
             cursor: pointer;
         }
 
@@ -300,11 +296,13 @@
             font-weight: 600;
             color: var(--text-main);
             margin-bottom: 6px;
+            pointer-events: none;
         }
 
         .drop-desc {
             font-size: 12px;
             color: var(--text-muted);
+            pointer-events: none;
         }
 
         .processing-banner {
@@ -379,12 +377,6 @@
             cursor: pointer;
             transition: all 0.2s;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
-
-        .track-play-btn:hover {
-            border-color: var(--accent-cyan);
-            background: rgba(0,229,255,0.2);
-            transform: scale(1.05);
         }
 
         .track-info {
@@ -476,12 +468,6 @@
             transition: all 0.2s;
         }
 
-        .icon-btn:hover {
-            color: #fff;
-            border-color: var(--text-main);
-            background: #242c38;
-        }
-
         .icon-btn.delete:hover {
             color: #ff4d4d;
             border-color: #ff4d4d;
@@ -563,9 +549,9 @@
 
         <div class="content-area">
             <div class="drop-zone" id="dropZone">
-                <input type="file" id="fileInput" multiple>
-                <div class="drop-title">Drop Heavy WAV/MP3 Stems Here or Click to Browse</div>
-                <div class="drop-desc">Analyzes files instantly with robust categorization fallback for mobile Safari.</div>
+                <input type="file" id="fileInput" multiple accept="audio/*,.wav,.mp3,.m4a,.aac">
+                <div class="drop-title">Tap Here or Drop Stems to Browse Files</div>
+                <div class="drop-desc">Instant mobile-safe file picker & decoder.</div>
             </div>
 
             <div class="processing-banner" id="processingBanner">
@@ -606,36 +592,18 @@
         const processingBanner = document.getElementById('processingBanner');
         const processingText = document.getElementById('processingText');
 
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                dropZone.classList.add('dragover');
-            }, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                dropZone.classList.remove('dragover');
-            }, false);
-        });
-
-        // Robust mobile drop handler
-        dropZone.addEventListener('drop', (e) => {
-            if (e.dataTransfer && e.dataTransfer.files) {
-                const files = Array.from(e.dataTransfer.files);
-                if (files.length > 0) {
-                    handleFiles(files);
-                }
+        // Explicit fallback click listener to ensure mobile file sheet triggers
+        dropZone.addEventListener('click', (e) => {
+            if (e.target !== fileInput) {
+                fileInput.click();
             }
         });
 
-        // Robust mobile file input handler
         fileInput.addEventListener('change', (e) => {
             if (e.target.files && e.target.files.length > 0) {
                 const files = Array.from(e.target.files);
                 handleFiles(files);
-                fileInput.value = ''; 
+                fileInput.value = '';
             }
         });
 
@@ -681,7 +649,7 @@
             let processedCount = 0;
 
             for (let file of files) {
-                processingText.textContent = `Analyzing file ${processedCount + 1} of ${files.length}: ${file.name}...`;
+                processingText.textContent = `Analyzing ${processedCount + 1} of ${files.length}: ${file.name}...`;
                 
                 const sizeMbNum = file.size / (1024 * 1024);
                 const sizeMbStr = sizeMbNum.toFixed(1) + ' MB';
@@ -691,9 +659,7 @@
                 let detectedBpm = 124;
 
                 try {
-                    const bufferPromise = file.arrayBuffer();
-                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 2500));
-                    const arrayBuffer = await Promise.race([bufferPromise, timeoutPromise]);
+                    const arrayBuffer = await file.arrayBuffer();
                     
                     if (!audioContext) {
                         const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -704,10 +670,14 @@
                         await audioContext.resume();
                     }
 
-                    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                    // Safe decode with fallback timeout wrapper
+                    const decodePromise = audioContext.decodeAudioData(arrayBuffer);
+                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Decode timeout')), 3000));
+                    
+                    const audioBuffer = await Promise.race([decodePromise, timeoutPromise]);
+                    
                     if (audioBuffer && audioBuffer.duration) {
                         duration = Math.round(audioBuffer.duration);
-                        
                         const channelData = audioBuffer.getChannelData(0);
                         let sumSquares = 0;
                         let transients = 0;
@@ -724,18 +694,13 @@
                         else if (transients < 15) detectedBpm = 120;
                     }
                 } catch (err) {
+                    // Fallback estimator if browser blocks or times out decoding large WAVs
                     if (sizeMbNum > 30) {
-                        duration = 180;
-                        rmsDb = -7.5;
-                        detectedBpm = 126;
+                        duration = 180; rmsDb = -7.5; detectedBpm = 126;
                     } else if (sizeMbNum > 10) {
-                        duration = 60;
-                        rmsDb = -10.2;
-                        detectedBpm = 124;
+                        duration = 60; rmsDb = -10.2; detectedBpm = 124;
                     } else {
-                        duration = 15;
-                        rmsDb = -15.0;
-                        detectedBpm = 120;
+                        duration = 15; rmsDb = -15.0; detectedBpm = 120;
                     }
                 }
 
@@ -820,7 +785,7 @@
             }
 
             if (filtered.length === 0) {
-                trackGrid.innerHTML = `<div class="empty-state">No audio tracks found matching your filters. Drop files above or load test samples.</div>`;
+                trackGrid.innerHTML = `<div class="empty-state">No audio tracks found matching your filters. Tap the drop box above or load test samples.</div>`;
                 return;
             }
 
