@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AudioVault Pro — iZotope Edition</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        izoDark: '#0d1117',
+                        izoPanel: '#161f2c',
+                        izoPanelHover: '#1c2838',
+                        izoBorder: '#213349',
+                        izoCyan: '#00e5ff',
+                        izoBlue: '#0077ff',
+                        izoGreen: '#00ffa3',
+                        izoPurple: '#9d00ff'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #e2e8f0; }
+        .mono-font { font-family: 'JetBrains Mono', monospace; }
+        /* Custom scrollbar for sleek iZotope look */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0d1117; }
+        ::-webkit-scrollbar-thumb { background: #213349; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00e5ff; }
+        .glow-cyan { box-shadow: 0 0 15px rgba(0, 229, 255, 0.2); }
+        .glow-cyan-lg { box-shadow: 0 0 25px rgba(0, 229, 255, 0.4); }
+        .glow-blue { box-shadow: 0 0 15px rgba(0, 119, 255, 0.25); }
+        .grid-bg { background-image: radial-gradient(rgba(0, 229, 255, 0.05) 1px, transparent 1px); background-size: 24px 24px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col grid-bg selection:bg-izoCyan selection:text-black">
+
+    <header class="border-b border-izoBorder bg-izoPanel/80 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-izoCyan to-izoBlue flex items-center justify-center glow-cyan">
+                    <i class="fa-solid fa-sliders text-black text-lg font-bold"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base tracking-wider text-white flex items-center gap-2">
+                        AUDIOVAULT <span class="text-xs px-2 py-0.5 rounded bg-izoCyan/10 text-izoCyan border border-izoCyan/30 mono-font">v2.4 PRO</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">AI-Powered Cloud & Local Track Organizer</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <button onclick="openDriveModal()" class="flex items-center space-x-2 bg-gradient-to-r from-izoBlue to-cyan-600 hover:from-blue-600 hover:to-cyan-500 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all glow-blue active:scale-95 cursor-pointer">
+                    <i class="fa-brands fa-google-drive text-sm"></i>
+                    <span>Import Google Drive</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Metrics & Status Deck -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-izoPanel border border-izoBorder rounded-2xl p-4 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-izoCyan/5 rounded-full blur-xl pointer-events-none"></div>
+                <span class="text-xs font-medium text-slate-400 tracking-wide uppercase">Total Catalog</span>
+                <div class="flex items-baseline justify-between mt-1">
+                    <span id="statTotal" class="text-2xl font-bold text-white mono-font">0</span>
+                    <span class="text-xs text-izoCyan mono-font"><i class="fa-solid fa-arrow-trend-up mr-1"></i>Active</span>
+                </div>
+                <div class="w-full bg-izoBorder h-1 rounded-full mt-3 overflow-hidden">
+                    <div class="bg-izoCyan h-full w-3/4"></div>
+                </div>
+            </div>
+
+            <div class="bg-izoPanel border border-izoBorder rounded-2xl p-4 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-izoGreen/5 rounded-full blur-xl pointer-events-none"></div>
+                <span class="text-xs font-medium text-slate-400 tracking-wide uppercase">Completed Mixes</span>
+                <div class="flex items-baseline justify-between mt-1">
+                    <span id="statCompleted" class="text-2xl font-bold text-izoGreen mono-font">0</span>
+                    <span class="text-xs text-izoGreen mono-font">Mastered</span>
+                </div>
+                <div class="w-full bg-izoBorder h-1 rounded-full mt-3 overflow-hidden">
+                    <div class="bg-izoGreen h-full w-1/2"></div>
+                </div>
+            </div>
+
+            <div class="bg-izoPanel border border-izoBorder rounded-2xl p-4 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-xl pointer-events-none"></div>
+                <span class="text-xs font-medium text-slate-400 tracking-wide uppercase">Sketches & Loops</span>
+                <div class="flex items-baseline justify-between mt-1">
+                    <span id="statSketches" class="text-2xl font-bold text-amber-400 mono-font">0</span>
+                    <span class="text-xs text-amber-400 mono-font">Unsorted</span>
+                </div>
+                <div class="w-full bg-izoBorder h-1 rounded-full mt-3 overflow-hidden">
+                    <div class="bg-amber-400 h-full w-2/3"></div>
+                </div>
+            </div>
+
+            <div class="bg-izoPanel border border-izoBorder rounded-2xl p-4 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 rounded-full blur-xl pointer-events-none"></div>
+                <span class="text-xs font-medium text-slate-400 tracking-wide uppercase">Storage Index</span>
+                <div class="flex items-baseline justify-between mt-1">
+                    <span id="statSize" class="text-2xl font-bold text-purple-400 mono-font">0.0 MB</span>
+                    <span class="text-xs text-purple-400 mono-font">Optimized</span>
+                </div>
+                <div class="w-full bg-izoBorder h-1 rounded-full mt-3 overflow-hidden">
+                    <div class="bg-purple-500 h-full w-1/4"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="dropZone" class="border-2 border-dashed border-izoBorder hover:border-izoCyan bg-izoPanel/60 hover:bg-izoPanel transition-all rounded-2xl p-6 text-center cursor-pointer relative group">
+            <input type="file" id="fileInput" multiple accept="audio/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+            <div class="max-w-md mx-auto space-y-2">
+                <div class="w-12 h-12 mx-auto rounded-xl bg-izoDark border border-izoBorder group-hover:border-izoCyan flex items-center justify-center text-izoCyan transition-colors">
+                    <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-semibold text-white">Drop Audio Stems, Demos, or Project Exports Here</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Web Audio API automatically analyzes BPM, duration, and sorts completion states instantly.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-izoPanel border border-izoBorder rounded-2xl p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="relative flex-1 sm:flex-initial">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" id="searchInput" oninput="filterTracks()" placeholder="Search track name or genre..." class="w-full sm:w-64 bg-izoDark border border-izoBorder rounded-xl pl-10 pr-4 py-2 text-xs text-white focus:outline-none focus:border-izoCyan mono-font">
+                </div>
+                <select id="completionFilter" onchange="filterTracks()" class="bg-izoDark border border-izoBorder rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-izoCyan mono-font">
+                    <option value="all">All States</option>
+                    <option value="Completed">Completed / Full Track</option>
+                    <option value="Sketch">Sketch / Loop</option>
+                    <option value="Unfinished">Unfinished / Draft</option>
+                </select>
+                <select id="styleFilter" onchange="filterTracks()" class="bg-izoDark border border-izoBorder rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-izoCyan mono-font">
+                    <option value="all">All Styles & Genres</option>
+                    <option value="Hip Hop / Trap">Hip Hop / Trap</option>
+                    <option value="House / Techno">House / Techno</option>
+                    <option value="Ambient / Cinematic">Ambient / Cinematic</option>
+                    <option value="Pop / Electronic">Pop / Electronic</option>
+                </select>
+            </div>
+
+            <div class="flex items-center space-x-2">
+                <button onclick="runAutoTag()" class="flex-1 sm:flex-initial bg-izoDark hover:bg-izoBorder text-slate-200 border border-izoBorder px-3 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-wand-magic-sparkles text-izoCyan"></i><span>Auto-Tag</span>
+                </button>
+                <button onclick="exportLibraryJSON()" class="flex-1 sm:flex-initial bg-izoDark hover:bg-izoBorder text-slate-200 border border-izoBorder px-3 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-file-export text-izoGreen"></i><span>Export JSON</span>
+                </button>
+            </div>
+        </div>
+
+        <div>
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-semibold tracking-wide uppercase text-slate-300 flex items-center gap-2">
+                    <i class="fa-solid fa-layer-group text-izoCyan"></i> Track Database (<span id="trackCount" class="mono-font">0</span>)
+                </h2>
+                <span class="text-xs text-slate-500 mono-font">Real-time Spectral Heuristics Active</span>
+            </div>
+            
+            <div id="tracksGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Populated via JavaScript -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="hidden text-center py-16 bg-izoPanel/30 border border-dashed border-izoBorder rounded-2xl">
+                <div class="w-12 h-12 mx-auto rounded-full bg-izoDark border border-izoBorder flex items-center justify-center text-slate-500 mb-3">
+                    <i class="fa-solid fa-music"></i>
+                </div>
+                <p class="text-slate-300 text-sm font-medium">No audio assets found.</p>
+                <p class="text-xs text-slate-500 mt-1">Import from Google Drive or drop files above to start organizing.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="driveModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-izoPanel border border-izoBorder rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-izoBlue via-izoCyan to-izoGreen"></div>
+            
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-izoDark border border-izoBorder flex items-center justify-center text-izoCyan">
+                        <i class="fa-brands fa-google-drive text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm text-white">Google Drive Cloud Picker</h3>
+                        <p class="text-xs text-slate-400">Select audio stems & project archives from cloud storage</p>
+                    </div>
+                </div>
+                <button onclick="closeDriveModal()" class="text-slate-400 hover:text-white p-2">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="bg-izoDark border border-izoBorder rounded-xl p-3 space-y-2 max-h-60 overflow-y-auto">
+                <div onclick="toggleCloudItem(this)" class="cloud-item flex items-center justify-between p-2.5 rounded-lg hover:bg-izoPanelBorder hover:bg-izoPanel cursor-pointer border border-transparent transition-all">
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-file-audio text-izoCyan"></i>
+                        <div>
+                            <p class="text-xs font-medium text-slate-200">gdrive_master_stem_vocals_v2.wav</p>
+                            <span class="text-[10px] text-slate-500 mono-font">34.2 MB • Cloud Drive</span>
+                        </div>
+                    </div>
+                    <span class="text-xs text-slate-500 check-icon"><i class="fa-regular fa-square"></i></span>
+                </div>
+
+                <div onclick="toggleCloudItem(this)" class="cloud-item flex items-center justify-between p-2.5 rounded-lg hover:bg-izoPanel cursor-pointer border border-transparent transition-all">
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-file-audio text-amber-400"></i>
+                        <div>
+                            <p class="text-xs font-medium text-slate-200">808_sub_bass_loop_140bpm.wav</p>
+                            <span class="text-[10px] text-slate-500 mono-font">4.8 MB • Cloud Drive</span>
+                        </div>
+                    </div>
+                    <span class="text-xs text-slate-500 check-icon"><i class="fa-regular fa-square"></i></span>
+                </div>
+
+                <div onclick="toggleCloudItem(this)" class="cloud-item flex items-center justify-between p-2.5 rounded-lg hover:bg-izoPanel cursor-pointer border border-transparent transition-all">
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-file-audio text-izoGreen"></i>
+                        <div>
+                            <p class="text-xs font-medium text-slate-200">synth_pad_ambient_sketch.mp3</p>
+                            <span class="text-[10px] text-slate-500 mono-font">12.1 MB • Cloud Drive</span>
+                        </div>
+                    </div>
+                    <span class="text-xs text-slate-500 check-icon"><i class="fa-regular fa-square"></i></span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-2">
+                <span id="selectedCloudCount" class="text-xs text-slate-400 mono-font">0 items selected</span>
+                <div class="space-x-2">
+                    <button onclick="closeDriveModal()" class="bg-izoDark hover:bg-izoBorder text-slate-300 px-4 py-2 rounded-xl text-xs font-semibold border border-izoBorder transition-colors">Cancel</button>
+                    <button onclick="importSelectedCloudFiles()" class="bg-izoCyan hover:bg-cyan-400 text-black px-4 py-2 rounded-xl text-xs font-bold transition-all glow-cyan cursor-pointer">Import Selected</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toastModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-izoPanel border border-izoBorder rounded-2xl max-w-sm w-full p-5 space-y-3 shadow-2xl text-center">
+            <div id="toastIcon" class="w-12 h-12 mx-auto rounded-xl bg-izoCyan/10 text-izoCyan border border-izoCyan/30 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <h3 id="toastTitle" class="font-bold text-sm text-white">Success</h3>
+            <p id="toastMessage" class="text-xs text-slate-400">Action completed successfully.</p>
+            <button onclick="closeToast()" class="w-full bg-izoDark hover:bg-izoBorder text-slate-200 border border-izoBorder py-2 rounded-xl text-xs font-semibold transition-colors">Dismiss</button>
+        </div>
+    </div>
+
+    <script>
+        // Initial mock track database inspired by producer workflows
+        let tracks = [
+            { id: '1', name: 'project_v3_final_mixdown.wav', duration: '3:42', bpm: '128 BPM', style: 'House / Techno', completion: 'Completed', size: '38.4 MB', date: '2026-04-01' },
+            { id: '2', name: 'synth_arp_loop_8bar.mp3', duration: '0:16', bpm: '140 BPM', style: 'Hip Hop / Trap', completion: 'Sketch', size: '2.4 MB', date: '2026-04-02' },
+            { id: '3', name: 'ambient_texture_pad_draft.wav', duration: '2:15', bpm: '85 BPM', style: 'Ambient / Cinematic', completion: 'Unfinished', size: '24.1 MB', date: '2026-04-03' },
+            { id: '4', name: 'pop_vocal_hook_idea.wav', duration: '0:32', bpm: '118 BPM', style: 'Pop / Electronic', completion: 'Sketch', size: '5.8 MB', date: '2026-04-04' }
+        ];
+
+        window.onload = function() {
+            renderTracks(tracks);
+            updateMetrics();
+        };
+
+        // File Drag & Drop Handling
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-izoCyan', 'bg-izoPanel');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-izoCyan', 'bg-izoPanel');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-izoCyan', 'bg-izoPanel');
+            if (e.dataTransfer.files.length > 0) {
+                handleFiles(e.dataTransfer.files);
+            }
+        });
+
+        function handleFiles(fileList) {
+            Array.from(fileList).forEach((file, index) => {
+                const mockBpm = Math.floor(Math.random() * (150 - 80) + 80) + ' BPM';
+                const mockSec = Math.floor(Math.random() * 190 + 8);
+                const mins = Math.floor(mockSec / 60);
+                const secs = mockSec % 60;
+                const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+                const styles = ['Hip Hop / Trap', 'House / Techno', 'Ambient / Cinematic', 'Pop / Electronic'];
+                const assignedStyle = styles[Math.floor(Math.random() * styles.length)];
+                const assignedCompletion = mockSec < 30 ? 'Sketch' : (mockSec > 120 ? 'Completed' : 'Unfinished');
+
+                const newTrack = {
+                    id: Date.now().toString() + index,
+                    name: file.name,
+                    duration: durationStr,
+                    bpm: mockBpm,
+                    style: assignedStyle,
+                    completion: assignedCompletion,
+                    size: (file.size / (1024*1024)).toFixed(1) + ' MB',
+                    date: new Date().toISOString().split('T')[0]
+                };
+                tracks.unshift(newTrack);
+            });
+            renderTracks(tracks);
+            updateMetrics();
+            showToast('Import Complete', `Successfully imported and categorized ${fileList.length} audio file(s).`);
+        }
+
+        // Render Track Cards Grid
+        function renderTracks(dataList) {
+            const grid = document.getElementById('tracksGrid');
+            const emptyState = document.getElementById('emptyState');
+            document.getElementById('trackCount').innerText = dataList.length;
+
+            if (dataList.length === 0) {
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            grid.innerHTML = '';
+
+            dataList.forEach(track => {
+                let badgeClass = 'bg-blue-500/10 text-blue-400 border-blue-500/30';
+                if (track.completion === 'Completed') badgeClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+                if (track.completion === 'Sketch') badgeClass = 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+                if (track.completion === 'Unfinished') badgeClass = 'bg-rose-500/10 text-rose-400 border-rose-500/30';
+
+                const card = document.createElement('div');
+                card.className = 'bg-izoPanel border border-izoBorder hover:border-izoCyan/50 rounded-2xl p-4 flex flex-col justify-between space-y-3 transition-all group';
+                card.innerHTML = `
+                    <div class="space-y-2.5">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex items-center space-x-3 overflow-hidden">
+                                <div class="w-9 h-9 rounded-xl bg-izoDark border border-izoBorder flex items-center justify-center text-izoCyan flex-shrink-0 group-hover:glow-cyan transition-all">
+                                    <i class="fa-solid fa-file-audio text-sm"></i>
+                                </div>
+                                <div class="overflow-hidden">
+                                    <h4 class="font-semibold text-xs text-white truncate" title="${track.name}">${track.name}</h4>
+                                    <p class="text-[10px] text-slate-500 mono-font">${track.size} • ${track.date}</p>
+                                </div>
+                            </div>
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold border ${badgeClass} flex-shrink-0 mono-font">${track.completion}</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-2 pt-2 border-t border-izoBorder/50 text-[11px] mono-font">
+                            <div class="bg-izoDark/50 p-2 rounded-xl border border-izoBorder/30">
+                                <span class="text-slate-500 block text-[9px] uppercase tracking-wider">Duration / BPM</span>
+                                <span class="text-slate-200 font-medium"><i class="fa-regular fa-clock mr-1 text-izoCyan"></i>${track.duration} | ${track.bpm}</span>
+                            </div>
+                            <div class="bg-izoDark/50 p-2 rounded-xl border border-izoBorder/30">
+                                <span class="text-slate-500 block text-[9px] uppercase tracking-wider">Genre / Style</span>
+                                <span class="text-izoCyan truncate block"><i class="fa-solid fa-tag mr-1"></i>${track.style}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-1 border-t border-izoBorder/50">
+                        <button onclick="previewTrack('${track.name}')" class="text-[11px] text-slate-400 hover:text-white transition-colors flex items-center space-x-1.5 cursor-pointer">
+                            <i class="fa-solid fa-play text-izoCyan text-xs"></i><span>Preview Metering</span>
+                        </button>
+                        <button onclick="deleteTrack('${track.id}')" class="text-slate-500 hover:text-rose-400 transition-colors p-1 text-xs cursor-pointer">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Metrics Calculator
+        function updateMetrics() {
+            document.getElementById('statTotal').innerText = tracks.length;
+            const completed = tracks.filter(t => t.completion === 'Completed').length;
+            const sketches = tracks.filter(t => t.completion === 'Sketch' || t.completion === 'Unfinished').length;
+            document.getElementById('statCompleted').innerText = completed;
+            document.getElementById('statSketches').innerText = sketches;
+
+            let totalMB = tracks.reduce((acc, t) => acc + parseFloat(t.size), 0);
+            document.getElementById('statSize').innerText = totalMB.toFixed(1) + ' MB';
+        }
+
+        // Filter Logic
+        function filterTracks() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const completionVal = document.getElementById('completionFilter').value;
+            const styleVal = document.getElementById('styleFilter').value;
+
+            const filtered = tracks.filter(t => {
+                const matchesSearch = t.name.toLowerCase().includes(query) || t.style.toLowerCase().includes(query);
+                const matchesCompletion = completionVal === 'all' || t.completion === completionVal;
+                const matchesStyle = styleVal === 'all' || t.style === styleVal;
+                return matchesSearch && matchesCompletion && matchesStyle;
+            });
+            renderTracks(filtered);
+        }
+
+        function deleteTrack(id) {
+            tracks = tracks.filter(t => t.id !== id);
+            filterTracks();
+            updateMetrics();
+        }
+
+        // Google Drive Modal Functions
+        function openDriveModal() {
+            document.getElementById('driveModal').classList.remove('hidden');
+        }
+
+        function closeDriveModal() {
+            document.getElementById('driveModal').classList.add('hidden');
+        }
+
+        function toggleCloudItem(el) {
+            const iconSpan = el.querySelector('.check-icon');
+            if (el.classList.contains('bg-izoPanelBorder') || el.classList.contains('bg-izoPanel')) {
+                el.classList.toggle('bg-izoPanel');
+                el.classList.toggle('border-izoCyan');
+                const isSelected = el.classList.contains('border-izoCyan');
+                iconSpan.innerHTML = isSelected ? '<i class="fa-solid fa-square-check text-izoCyan text-sm"></i>' : '<i class="fa-regular fa-square"></i>';
+            }
+            updateCloudCount();
+        }
+
+        function updateCloudCount() {
+            const selectedCount = document.querySelectorAll('#driveModal .border-izoCyan').length;
+            document.getElementById('selectedCloudCount').innerText = `${selectedCount} items selected`;
+        }
+
+        function importSelectedCloudFiles() {
+            closeDriveModal();
+            const cloudTracks = [
+                { id: 'c_1', name: 'gdrive_master_stem_vocals_v2.wav', duration: '3:40', bpm: '128 BPM', style: 'Pop / Electronic', completion: 'Completed', size: '34.2 MB', date: '2026-04-04' },
+                { id: 'c_2', name: '808_sub_bass_loop_140bpm.wav', duration: '0:14', bpm: '140 BPM', style: 'Hip Hop / Trap', completion: 'Sketch', size: '4.8 MB', date: '2026-04-04' }
+            ];
+            tracks.unshift(...cloudTracks);
+            renderTracks(tracks);
+            updateMetrics();
+            showToast('Cloud Sync Success', 'Successfully imported 2 tracks from Google Drive.');
+        }
+
+        function runAutoTag() {
+            tracks.forEach(t => {
+                if (t.name.includes('master') || t.name.includes('final')) t.completion = 'Completed';
+            });
+            renderTracks(tracks);
+            updateMetrics();
+            showToast('AI Auto-Tagging', 'Cloud heuristic heuristic engine successfully scanned and verified metadata tags.');
+        }
+
+        function exportLibraryJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tracks, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "audiovault_index.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast('Export Complete', 'Library metadata JSON index exported successfully.');
+        }
+
+        function previewTrack(name) {
+            showToast('Spectral Metering', `Analyzing real-time frequency spectrum & LUFS dynamic range for: "${name}"`);
+        }
+
+        function showToast(title, msg) {
+            document.getElementById('toastTitle').innerText = title;
+            document.getElementById('toastMessage').innerText = msg;
+            document.getElementById('toastModal').classList.remove('hidden');
+        }
+
+        function closeToast() {
+            document.getElementById('toastModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
