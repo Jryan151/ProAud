@@ -3,19 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AuraCore Audio Tagger & Organizer</title>
+    <title>Audio Analyzer</title>
     <style>
         :root {
-            --bg-deep: #121417;
-            --bg-panel: #1a1e24;
-            --bg-card: #222730;
-            --border-color: #2e3542;
-            --accent-cyan: #00e5ff;
-            --accent-teal: #00b4d8;
-            --accent-orange: #ff6b35;
-            --text-main: #e2e8f0;
-            --text-muted: #8a99ad;
-            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --bg: #121214;
+            --panel: #1e1e24;
+            --accent: #00e5ff;
+            --text: #e2e8f0;
+            --muted: #8a99ad;
+            --border: #2a2a35;
         }
 
         * {
@@ -25,810 +21,262 @@
         }
 
         body {
-            background-color: var(--bg-deep);
-            color: var(--text-main);
-            font-family: var(--font-family);
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow-x: hidden;
-        }
-
-        header {
-            background: linear-gradient(180deg, #1e232b 0%, var(--bg-panel) 100%);
-            border-bottom: 2px solid #000;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-            padding: 16px 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-
-        .logo-area {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .logo-icon {
-            width: 36px;
-            height: 36px;
-            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-teal));
-            border-radius: 6px;
-            display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 900;
-            color: #000;
-            font-size: 18px;
-            box-shadow: inset 0 1px 3px rgba(255,255,255,0.4), 0 0 12px rgba(0,229,255,0.4);
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
 
         h1 {
-            font-size: 20px;
-            letter-spacing: 1.5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: #fff;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-        }
-
-        .subtitle {
-            font-size: 11px;
-            color: var(--text-muted);
-            letter-spacing: 0.8px;
-            text-transform: uppercase;
-        }
-
-        .header-controls {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .vst-btn {
-            background: linear-gradient(180deg, #2b3340 0%, #1c222b 100%);
-            border: 1px solid #3c4758;
-            color: var(--text-main);
-            padding: 10px 18px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .vst-btn:hover {
-            border-color: var(--accent-cyan);
-            color: var(--accent-cyan);
-            box-shadow: 0 0 10px rgba(0,229,255,0.2), inset 0 1px 0 rgba(255,255,255,0.2);
-        }
-
-        .vst-btn.primary {
-            background: linear-gradient(180deg, #00b4d8 0%, #0077b6 100%);
-            border-color: #90e0ef;
-            color: #fff;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-            box-shadow: 0 2px 8px rgba(0,180,216,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
-        }
-
-        .header-meters {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 12px;
-            background: #0d0f12;
-            padding: 10px 14px;
-            border-radius: 4px;
-            border: 1px solid #222a36;
-        }
-
-        .meter-box {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .meter-label {
-            font-size: 10px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .meter-value {
-            color: var(--accent-cyan);
-            font-family: monospace;
-            font-weight: bold;
-        }
-
-        .meter-bar-bg {
-            height: 6px;
-            background: #181d26;
-            border-radius: 3px;
-            overflow: hidden;
-            border: 1px solid #28303e;
-        }
-
-        .meter-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent-teal), var(--accent-cyan));
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
-        main {
-            flex: 1;
-            padding: 20px;
-            max-width: 1400px;
-            width: 100%;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            gap: 20px;
-        }
-
-        @media (max-width: 900px) {
-            main {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        aside {
-            background: var(--bg-panel);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            height: fit-content;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-
-        .sidebar-section {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .sidebar-title {
-            font-size: 11px;
+            font-size: 18px;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: var(--text-muted);
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 6px;
+            text-align: center;
+            color: #fff;
         }
 
-        .search-input {
-            background: #12151a;
-            border: 1px solid #2a3342;
-            color: var(--text-main);
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 13px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .search-input:focus {
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 8px rgba(0,229,255,0.2);
-        }
-
-        .filter-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .filter-chip {
-            background: #1e242d;
-            border: 1px solid #2e3846;
-            color: var(--text-muted);
-            padding: 5px 10px;
-            border-radius: 12px;
-            font-size: 11px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .filter-chip:hover, .filter-chip.active {
-            background: rgba(0,229,255,0.15);
-            border-color: var(--accent-cyan);
-            color: var(--accent-cyan);
-        }
-
-        .content-area {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .drop-zone {
-            background: var(--bg-panel);
-            border: 2px dashed #344054;
-            border-radius: 6px;
+        .upload-box {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
             padding: 30px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             position: relative;
-            box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+            background: rgba(255,255,255,0.01);
         }
 
-        .drop-zone:hover, .drop-zone.dragover {
-            border-color: var(--accent-cyan);
-            background: rgba(0,229,255,0.03);
-            box-shadow: inset 0 2px 15px rgba(0,229,255,0.1);
+        .upload-box:hover, .upload-box:active {
+            border-color: var(--accent);
+            background: rgba(0, 229, 255, 0.05);
         }
 
-        /* Fixed mobile input styling so it's fully interactable and clickable */
-        .drop-zone input[type="file"] {
+        .upload-box input {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             opacity: 0;
-            z-index: 10;
             cursor: pointer;
         }
 
-        .drop-title {
+        .upload-text {
             font-size: 14px;
             font-weight: 600;
-            color: var(--text-main);
-            margin-bottom: 6px;
+            color: var(--text);
             pointer-events: none;
         }
 
-        .drop-desc {
-            font-size: 12px;
-            color: var(--text-muted);
-            pointer-events: none;
-        }
-
-        .processing-banner {
-            display: none;
-            background: rgba(0, 229, 255, 0.1);
-            border: 1px solid var(--accent-cyan);
-            padding: 10px 14px;
-            border-radius: 4px;
-            font-size: 12px;
-            color: var(--accent-cyan);
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .processing-banner.active {
-            display: flex;
-        }
-
-        .track-list-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
-            color: var(--text-muted);
-            padding: 0 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-        }
-
-        .track-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .track-card {
-            background: var(--bg-panel);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 14px 18px;
-            display: grid;
-            grid-template-columns: 45px 2fr 1fr 1fr 1fr auto;
-            align-items: center;
-            gap: 15px;
-            transition: all 0.2s;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-
-        @media (max-width: 800px) {
-            .track-card {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-        }
-
-        .track-card:hover {
-            border-color: #3e4b5e;
-            background: #20252e;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-        }
-
-        .track-play-btn {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #283240, #181d26);
-            border: 1px solid #3c4a5e;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--accent-cyan);
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
-
-        .track-info {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            overflow: hidden;
-        }
-
-        .track-name {
-            font-size: 14px;
-            font-weight: 600;
-            color: #fff;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .track-meta-sub {
+        .upload-sub {
             font-size: 11px;
-            color: var(--text-muted);
-            display: flex;
-            gap: 10px;
+            color: var(--muted);
+            margin-top: 6px;
+            pointer-events: none;
         }
 
-        .badge {
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            width: fit-content;
-        }
-
-        .badge.complete {
-            background: rgba(0, 229, 255, 0.15);
-            color: var(--accent-cyan);
-            border: 1px solid rgba(0, 229, 255, 0.3);
-        }
-
-        .badge.sketch {
-            background: rgba(255, 107, 53, 0.15);
-            color: var(--accent-orange);
-            border: 1px solid rgba(255, 107, 53, 0.3);
-        }
-
-        .badge.loop {
-            background: rgba(114, 9, 183, 0.2);
-            color: #9d4edd;
-            border: 1px solid rgba(114, 9, 183, 0.4);
-        }
-
-        .stat-group {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .stat-label {
-            font-size: 10px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-        }
-
-        .stat-val {
-            font-size: 13px;
-            font-family: monospace;
-            color: var(--text-main);
-            font-weight: 600;
-        }
-
-        .track-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .icon-btn {
-            background: #181d26;
-            border: 1px solid #2a3342;
-            color: var(--text-muted);
-            width: 32px;
-            height: 32px;
-            border-radius: 4px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .icon-btn.delete:hover {
-            color: #ff4d4d;
-            border-color: #ff4d4d;
-            background: rgba(255,77,77,0.1);
-        }
-
-        .empty-state {
+        .status {
+            font-size: 12px;
+            color: var(--accent);
             text-align: center;
-            padding: 40px 20px;
-            background: var(--bg-panel);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            color: var(--text-muted);
+            min-height: 18px;
+            font-family: monospace;
+        }
+
+        .results {
+            background: #141418;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .results.active {
+            display: flex;
+        }
+
+        .result-title {
             font-size: 13px;
+            font-weight: bold;
+            color: var(--accent);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 6px;
+            word-break: break-all;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+        }
+
+        .metric-label {
+            color: var(--muted);
+        }
+
+        .metric-value {
+            font-family: monospace;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .audio-player-container {
+            margin-top: 6px;
+            width: 100%;
+        }
+
+        audio {
+            width: 100%;
+            height: 36px;
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <div class="header-top">
-            <div class="logo-area">
-                <div class="logo-icon">AC</div>
-                <div>
-                    <h1>AuraCore Tagger</h1>
-                    <div class="subtitle">Segmented Audio Analysis Engine</div>
-                </div>
-            </div>
-            <div class="header-controls">
-                <button class="vst-btn" id="loadSamplesBtn">Load Test Samples</button>
-                <button class="vst-btn primary" id="exportCsvBtn">Export CSV Report</button>
-            </div>
+    <div class="container">
+        <h1>Audio Analyzer</h1>
+
+        <div class="upload-box" id="uploadBox">
+            <input type="file" id="fileInput" accept="audio/*,.wav,.mp3,.m4a,.aac,.flac">
+            <div class="upload-text">Tap to Select Audio Track</div>
+            <div class="upload-sub">Supports MP3, WAV, M4A, AAC</div>
         </div>
 
-        <div class="header-meters">
-            <div class="meter-box">
-                <div class="meter-label"><span>Library Count</span><span class="meter-value" id="statTotalTracks">0 Tracks</span></div>
-                <div class="meter-bar-bg"><div class="meter-bar-fill" id="meterTracks" style="width: 0%;"></div></div>
+        <div class="status" id="statusText"></div>
+
+        <div class="results" id="resultsPanel">
+            <div class="result-title" id="resFilename">filename.wav</div>
+            
+            <div class="metric-row">
+                <span class="metric-label">Duration</span>
+                <span class="metric-value" id="resDuration">0:00</span>
             </div>
-            <div class="meter-box">
-                <div class="meter-label"><span>Completed Projects</span><span class="meter-value" id="statCompleted">0%</span></div>
-                <div class="meter-bar-bg"><div class="meter-bar-fill" id="meterCompleted" style="width: 0%;"></div></div>
+            <div class="metric-row">
+                <span class="metric-label">Peak Amplitude</span>
+                <span class="metric-value" id="resPeak">0.00 dB</span>
             </div>
-            <div class="meter-box">
-                <div class="meter-label"><span>Avg Tempo Est.</span><span class="meter-value" id="statAvgBpm">124 BPM</span></div>
-                <div class="meter-bar-bg"><div class="meter-bar-fill" id="meterBpm" style="width: 62%;"></div></div>
+            <div class="metric-row">
+                <span class="metric-label">Sample Rate</span>
+                <span class="metric-value" id="resSampleRate">0 Hz</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Channels</span>
+                <span class="metric-value" id="resChannels">0</span>
+            </div>
+
+            <div class="audio-player-container">
+                <audio id="audioPlayer" controls></audio>
             </div>
         </div>
-    </header>
-
-    <main>
-        <aside>
-            <div class="sidebar-section">
-                <div class="sidebar-title">Search Tags</div>
-                <input type="text" id="searchInput" class="search-input" placeholder="Search by style or tag...">
-            </div>
-
-            <div class="sidebar-section">
-                <div class="sidebar-title">Filter Completion</div>
-                <div class="filter-tags" id="completionFilters">
-                    <div class="filter-chip active" data-filter="all">All Tracks</div>
-                    <div class="filter-chip" data-filter="Complete">Complete</div>
-                    <div class="filter-chip" data-filter="Sketch">Sketch / Idea</div>
-                    <div class="filter-chip" data-filter="Loop">Loop / Stem</div>
-                </div>
-            </div>
-
-            <div class="sidebar-section">
-                <div class="sidebar-title">Filter Style</div>
-                <div class="filter-tags" id="styleFilters">
-                    <div class="filter-chip active" data-style="all">All Styles</div>
-                    <div class="filter-chip" data-style="Slap House">Slap House</div>
-                    <div class="filter-chip" data-style="Deep House">Deep House</div>
-                    <div class="filter-chip" data-style="Tech House">Tech House</div>
-                    <div class="filter-chip" data-style="Ambient">Ambient</div>
-                </div>
-            </div>
-        </aside>
-
-        <div class="content-area">
-            <div class="drop-zone" id="dropZone">
-                <input type="file" id="fileInput" multiple accept="audio/*,.wav,.mp3,.m4a,.aac">
-                <div class="drop-title">Tap Here or Drop Stems to Browse Files</div>
-                <div class="drop-desc">Instant mobile-safe file picker & decoder.</div>
-            </div>
-
-            <div class="processing-banner" id="processingBanner">
-                <span id="processingText">Processing audio files...</span>
-                <span id="processingSpinner">⏳</span>
-            </div>
-
-            <div class="track-list-header">
-                <span>Categorized Analysis Results</span>
-                <span id="resultsCount">Showing 0 tracks</span>
-            </div>
-
-            <div class="track-grid" id="trackGrid">
-            </div>
-        </div>
-    </main>
+    </div>
 
     <script>
-        let tracks = [];
-        let activeCompletionFilter = 'all';
-        let activeStyleFilter = 'all';
-        let searchQuery = '';
-        let audioContext = null;
-
-        const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
-        const trackGrid = document.getElementById('trackGrid');
-        const searchInput = document.getElementById('searchInput');
-        const loadSamplesBtn = document.getElementById('loadSamplesBtn');
-        const exportCsvBtn = document.getElementById('exportCsvBtn');
-        const resultsCount = document.getElementById('resultsCount');
-        const statTotalTracks = document.getElementById('statTotalTracks');
-        const statCompleted = document.getElementById('statCompleted');
-        const statAvgBpm = document.getElementById('statAvgBpm');
-        const meterTracks = document.getElementById('meterTracks');
-        const meterCompleted = document.getElementById('meterCompleted');
-        const meterBpm = document.getElementById('meterBpm');
-        const processingBanner = document.getElementById('processingBanner');
-        const processingText = document.getElementById('processingText');
+        const statusText = document.getElementById('statusText');
+        const resultsPanel = document.getElementById('resultsPanel');
+        const resFilename = document.getElementById('resFilename');
+        const resDuration = document.getElementById('resDuration');
+        const resPeak = document.getElementById('resPeak');
+        const resSampleRate = document.getElementById('resSampleRate');
+        const resChannels = document.getElementById('resChannels');
+        const audioPlayer = document.getElementById('audioPlayer');
 
-        // Explicit fallback click listener to ensure mobile file sheet triggers
-        dropZone.addEventListener('click', (e) => {
-            if (e.target !== fileInput) {
-                fileInput.click();
-            }
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files && e.target.files.length > 0) {
-                const files = Array.from(e.target.files);
-                handleFiles(files);
-                fileInput.value = '';
-            }
-        });
-
-        searchInput.addEventListener('input', (e) => {
-            searchQuery = e.target.value.toLowerCase();
-            renderTracks();
-        });
-
-        document.querySelectorAll('#completionFilters .filter-chip').forEach(chip => {
-            chip.addEventListener('click', (e) => {
-                document.querySelectorAll('#completionFilters .filter-chip').forEach(c => c.classList.remove('active'));
-                e.target.classList.add('active');
-                activeCompletionFilter = e.target.getAttribute('data-filter');
-                renderTracks();
-            });
-        });
-
-        document.querySelectorAll('#styleFilters .filter-chip').forEach(chip => {
-            chip.addEventListener('click', (e) => {
-                document.querySelectorAll('#styleFilters .filter-chip').forEach(c => c.classList.remove('active'));
-                e.target.classList.add('active');
-                activeStyleFilter = e.target.getAttribute('data-style');
-                renderTracks();
-            });
-        });
-
-        loadSamplesBtn.addEventListener('click', () => {
-            const sampleTracks = [
-                { id: '1', name: 'audio_file_unnamed_01.wav', duration: 14, size: '34.2 MB', bpm: 124, completion: 'Loop', style: 'Deep House', rms: '-9.4 dB' },
-                { id: '2', name: 'unnamed_stem_master_mix.wav', duration: 142, size: '41.8 MB', bpm: 126, completion: 'Complete', style: 'Slap House', rms: '-6.2 dB' },
-                { id: '3', name: 'untitled_synth_idea_raw.wav', duration: 22, size: '8.4 MB', bpm: 120, completion: 'Sketch', style: 'Ambient', rms: '-18.1 dB' },
-                { id: '4', name: 'drum_groove_test_04.wav', duration: 38, size: '15.6 MB', bpm: 128, completion: 'Loop', style: 'Tech House', rms: '-11.0 dB' },
-                { id: '5', name: 'unlabeled_session_bounce.wav', duration: 215, size: '45.2 MB', bpm: 125, completion: 'Complete', style: 'Slap House', rms: '-7.5 dB' }
-            ];
-            tracks = [...sampleTracks, ...tracks];
-            renderTracks();
-        });
-
-        async function handleFiles(files) {
+        fileInput.addEventListener('change', async (e) => {
+            const files = e.target.files;
             if (!files || files.length === 0) return;
 
-            processingBanner.classList.add('active');
-            let processedCount = 0;
+            const file = files[0];
+            statusText.textContent = `Loading ${file.name}...`;
+            resultsPanel.classList.remove('active');
 
-            for (let file of files) {
-                processingText.textContent = `Analyzing ${processedCount + 1} of ${files.length}: ${file.name}...`;
+            try {
+                // 1. Setup standard audio element playback preview
+                const objectUrl = URL.createObjectURL(file);
+                audioPlayer.src = objectUrl;
+
+                statusText.textContent = `Decoding audio buffer...`;
+
+                // 2. Read raw binary array buffer
+                const arrayBuffer = await file.arrayBuffer();
+
+                // 3. Decode audio data via Web Audio API
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                const audioCtx = new AudioContextClass();
                 
-                const sizeMbNum = file.size / (1024 * 1024);
-                const sizeMbStr = sizeMbNum.toFixed(1) + ' MB';
-                
-                let duration = Math.max(5, Math.round(sizeMbNum * 5.5));
-                let rmsDb = -10.0;
-                let detectedBpm = 124;
+                if (audioCtx.state === 'suspended') {
+                    await audioCtx.resume();
+                }
 
-                try {
-                    const arrayBuffer = await file.arrayBuffer();
-                    
-                    if (!audioContext) {
-                        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                        audioContext = new AudioCtx();
-                    }
-                    
-                    if (audioContext.state === 'suspended') {
-                        await audioContext.resume();
-                    }
+                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
 
-                    // Safe decode with fallback timeout wrapper
-                    const decodePromise = audioContext.decodeAudioData(arrayBuffer);
-                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Decode timeout')), 3000));
-                    
-                    const audioBuffer = await Promise.race([decodePromise, timeoutPromise]);
-                    
-                    if (audioBuffer && audioBuffer.duration) {
-                        duration = Math.round(audioBuffer.duration);
-                        const channelData = audioBuffer.getChannelData(0);
-                        let sumSquares = 0;
-                        let transients = 0;
-                        const step = Math.max(1, Math.floor(channelData.length / 1000));
-                        for (let i = 0; i < channelData.length; i += step) {
-                            const val = channelData[i];
-                            sumSquares += val * val;
-                            if (Math.abs(val) > 0.65) transients++;
+                statusText.textContent = `Analyzing metrics...`;
+
+                // 4. Calculate actual metrics from channel data
+                const durationSec = audioBuffer.duration;
+                const sampleRate = audioBuffer.sampleRate;
+                const numberOfChannels = audioBuffer.numberOfChannels;
+
+                // Scan PCM data to find peak amplitude
+                let maxSample = 0;
+                for (let channel = 0; channel < numberOfChannels; channel++) {
+                    const channelData = audioBuffer.getChannelData(channel);
+                    for (let i = 0; i < channelData.length; i++) {
+                        const absVal = Math.abs(channelData[i]);
+                        if (absVal > maxSample) {
+                            maxSample = absVal;
                         }
-                        const rms = Math.sqrt(sumSquares / (channelData.length / step));
-                        rmsDb = (20 * Math.log10(Math.max(0.0001, rms))).toFixed(1);
-
-                        if (transients > 60) detectedBpm = 126;
-                        else if (transients < 15) detectedBpm = 120;
-                    }
-                } catch (err) {
-                    // Fallback estimator if browser blocks or times out decoding large WAVs
-                    if (sizeMbNum > 30) {
-                        duration = 180; rmsDb = -7.5; detectedBpm = 126;
-                    } else if (sizeMbNum > 10) {
-                        duration = 60; rmsDb = -10.2; detectedBpm = 124;
-                    } else {
-                        duration = 15; rmsDb = -15.0; detectedBpm = 120;
                     }
                 }
 
-                let completion = 'Sketch';
-                if (duration > 90) completion = 'Complete';
-                else if (duration < 45) completion = 'Loop';
+                // Convert peak amplitude to decibels (dBFS)
+                const peakDb = maxSample > 0 ? (20 * Math.log10(maxSample)).toFixed(2) : '-99.00';
 
-                let style = 'Deep House';
-                if (rmsDb > -9.0 && duration > 60) style = 'Slap House';
-                else if (rmsDb < -13.0) style = 'Ambient';
-                else if (duration < 45) style = 'Tech House';
+                // Format duration to M:SS
+                const mins = Math.floor(durationSec / 60);
+                const secs = Math.floor(durationSec % 60);
+                const formattedDuration = `${mins}:${secs < 10 ? '0' : ''}${secs} (${Math.round(durationSec)}s)`;
 
-                const newTrack = {
-                    id: 'track_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-                    name: file.name,
-                    duration: duration,
-                    size: sizeMbStr,
-                    bpm: detectedBpm,
-                    completion: completion,
-                    style: style,
-                    rms: rmsDb + ' dB'
-                };
+                // 5. Display results on UI
+                resFilename.textContent = file.name;
+                resDuration.textContent = formattedDuration;
+                resPeak.textContent = `${peakDb} dBFS`;
+                resSampleRate.textContent = `${sampleRate.toLocaleString()} Hz`;
+                resChannels.textContent = numberOfChannels === 1 ? 'Mono (1)' : (numberOfChannels === 2 ? 'Stereo (2)' : `${numberOfChannels} Channels`);
 
-                tracks.unshift(newTrack);
-                processedCount++;
+                statusText.textContent = `Analysis complete.`;
+                resultsPanel.classList.add('active');
+
+                // Clean up context
+                audioCtx.close();
+
+            } catch (err) {
+                console.error(err);
+                statusText.textContent = `Error: Could not decode file format. Try a standard MP3/WAV.`;
+            } finally {
+                // Reset file input so user can re-upload the same file if needed
+                fileInput.value = '';
             }
-
-            processingBanner.classList.remove('active');
-            renderTracks();
-        }
-
-        function formatDuration(sec) {
-            const mins = Math.floor(sec / 60);
-            const remainingSec = sec % 60;
-            return `${mins}:${remainingSec < 10 ? '0' : ''}${remainingSec}`;
-        }
-
-        window.deleteTrack = function(id) {
-            tracks = tracks.filter(t => t.id !== id);
-            renderTracks();
-        }
-
-        exportCsvBtn.addEventListener('click', () => {
-            if (tracks.length === 0) {
-                alert('No tracks in library to export.');
-                return;
-            }
-            let csvContent = "data:text/csv;charset=utf-8,Filename,Completion,Style,BPM,Duration(s),RMS,Size\n";
-            tracks.forEach(t => {
-                csvContent += `"${t.name}","${t.completion}","${t.style}",${t.bpm},${t.duration},"${t.rms}","${t.size}"\n`;
-            });
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "auracore_library_audit.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
         });
-
-        function renderTracks() {
-            const filtered = tracks.filter(t => {
-                const matchesSearch = t.name.toLowerCase().includes(searchQuery) || t.style.toLowerCase().includes(searchQuery) || t.completion.toLowerCase().includes(searchQuery);
-                const matchesCompletion = activeCompletionFilter === 'all' || t.completion === activeCompletionFilter;
-                const matchesStyle = activeStyleFilter === 'all' || t.style === activeStyleFilter;
-                return matchesSearch && matchesCompletion && matchesStyle;
-            });
-
-            statTotalTracks.textContent = `${tracks.length} Tracks`;
-            resultsCount.textContent = `Showing ${filtered.length} of ${tracks.length} tracks`;
-            meterTracks.style.width = Math.min(100, (tracks.length / 50) * 100) + '%';
-
-            const completeCount = tracks.filter(t => t.completion === 'Complete').length;
-            const completePct = tracks.length > 0 ? Math.round((completeCount / tracks.length) * 100) : 0;
-            statCompleted.textContent = `${completePct%}`;
-            meterCompleted.style.width = completePct + '%';
-
-            if (tracks.length > 0) {
-                const avgBpm = Math.round(tracks.reduce((acc, t) => acc + t.bpm, 0) / tracks.length);
-                statAvgBpm.textContent = `${avgBpm} BPM`;
-                meterBpm.style.width = Math.min(100, (avgBpm / 150) * 100) + '%';
-            }
-
-            if (filtered.length === 0) {
-                trackGrid.innerHTML = `<div class="empty-state">No audio tracks found matching your filters. Tap the drop box above or load test samples.</div>`;
-                return;
-            }
-
-            trackGrid.innerHTML = filtered.map(t => {
-                let badgeClass = 'sketch';
-                if (t.completion === 'Complete') badgeClass = 'complete';
-                if (t.completion === 'Loop') badgeClass = 'loop';
-
-                return `
-                    <div class="track-card">
-                        <div class="track-play-btn" title="Simulate Preview">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                        </div>
-                        <div class="track-info">
-                            <div class="track-name" title="${t.name}">${t.name}</div>
-                            <div class="track-meta-sub">
-                                <span>${t.size}</span>
-                                <span>•</span>
-                                <span>${formatDuration(t.duration)}</span>
-                            </div>
-                        </div>
-                        <div>
-                            <span class="badge ${badgeClass}">${t.completion}</span>
-                        </div>
-                        <div class="stat-group">
-                            <div class="stat-label">Style / Tempo</div>
-                            <div class="stat-val">${t.style} (${t.bpm})</div>
-                        </div>
-                        <div class="stat-group">
-                            <div class="stat-label">Dynamics (RMS)</div>
-                            <div class="stat-val">${t.rms}</div>
-                        </div>
-                        <div class="track-actions">
-                            <button class="icon-btn delete" onclick="deleteTrack('${t.id}')" title="Remove Track">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        renderTracks();
     </script>
 </body>
 </html>
