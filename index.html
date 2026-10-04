@@ -34,7 +34,6 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #e2e8f0; }
         .mono-font { font-family: 'JetBrains Mono', monospace; }
-        /* Custom scrollbar for sleek iZotope look */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #0d1117; }
         ::-webkit-scrollbar-thumb { background: #213349; border-radius: 3px; }
@@ -55,16 +54,20 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-base tracking-wider text-white flex items-center gap-2">
-                        AUDIOVAULT <span class="text-xs px-2 py-0.5 rounded bg-izoCyan/10 text-izoCyan border border-izoCyan/30 mono-font">v2.4 PRO</span>
+                        AUDIOVAULT <span class="text-xs px-2 py-0.5 rounded bg-izoCyan/10 text-izoCyan border border-izoCyan/30 mono-font">v2.5 TEST SUITE</span>
                     </h1>
                     <p class="text-xs text-slate-400">AI-Powered Cloud & Local Track Organizer</p>
                 </div>
             </div>
             
             <div class="flex items-center space-x-3">
+                <button onclick="loadSampleSuite()" class="flex items-center space-x-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-lg active:scale-95 cursor-pointer">
+                    <i class="fa-solid fa-flask text-sm"></i>
+                    <span>Load Test Samples</span>
+                </button>
                 <button onclick="openDriveModal()" class="flex items-center space-x-2 bg-gradient-to-r from-izoBlue to-cyan-600 hover:from-blue-600 hover:to-cyan-500 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all glow-blue active:scale-95 cursor-pointer">
                     <i class="fa-brands fa-google-drive text-sm"></i>
-                    <span>Import Google Drive</span>
+                    <span>Connect Drive (Simulated)</span>
                 </button>
             </div>
         </div>
@@ -72,7 +75,6 @@
 
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-        <!-- Metrics & Status Deck -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div class="bg-izoPanel border border-izoBorder rounded-2xl p-4 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-24 h-24 bg-izoCyan/5 rounded-full blur-xl pointer-events-none"></div>
@@ -130,7 +132,7 @@
                     <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
                 </div>
                 <div>
-                    <h3 class="text-sm font-semibold text-white">Drop Audio Stems, Demos, or Project Exports Here</h3>
+                    <h3 class="text-sm font-semibold text-white">Drop Audio Stems, Demos, or Click 'Load Test Samples'</h3>
                     <p class="text-xs text-slate-400 mt-0.5">Web Audio API automatically analyzes BPM, duration, and sorts completion states instantly.</p>
                 </div>
             </div>
@@ -180,12 +182,12 @@
             </div>
 
             <!-- Empty State -->
-            <div id="emptyState" class="hidden text-center py-16 bg-izoPanel/30 border border-dashed border-izoBorder rounded-2xl">
+            <div id="emptyState" class="text-center py-16 bg-izoPanel/30 border border-dashed border-izoBorder rounded-2xl">
                 <div class="w-12 h-12 mx-auto rounded-full bg-izoDark border border-izoBorder flex items-center justify-center text-slate-500 mb-3">
                     <i class="fa-solid fa-music"></i>
                 </div>
                 <p class="text-slate-300 text-sm font-medium">No audio assets found.</p>
-                <p class="text-xs text-slate-500 mt-1">Import from Google Drive or drop files above to start organizing.</p>
+                <p class="text-xs text-slate-500 mt-1">Click 'Load Test Samples' above or drop audio files to start organizing.</p>
             </div>
         </div>
 
@@ -201,8 +203,8 @@
                         <i class="fa-brands fa-google-drive text-xl"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-sm text-white">Google Drive Cloud Picker</h3>
-                        <p class="text-xs text-slate-400">Select audio stems & project archives from cloud storage</p>
+                        <h3 class="font-bold text-sm text-white">Google Drive Cloud Picker (Simulated)</h3>
+                        <p class="text-xs text-slate-400">Select cloud stems safely without public authentication</p>
                     </div>
                 </div>
                 <button onclick="closeDriveModal()" class="text-slate-400 hover:text-white p-2">
@@ -211,7 +213,7 @@
             </div>
 
             <div class="bg-izoDark border border-izoBorder rounded-xl p-3 space-y-2 max-h-60 overflow-y-auto">
-                <div onclick="toggleCloudItem(this)" class="cloud-item flex items-center justify-between p-2.5 rounded-lg hover:bg-izoPanelBorder hover:bg-izoPanel cursor-pointer border border-transparent transition-all">
+                <div onclick="toggleCloudItem(this)" class="cloud-item flex items-center justify-between p-2.5 rounded-lg hover:bg-izoPanel cursor-pointer border border-transparent transition-all">
                     <div class="flex items-center space-x-3">
                         <i class="fa-solid fa-file-audio text-izoCyan"></i>
                         <div>
@@ -228,17 +230,6 @@
                         <div>
                             <p class="text-xs font-medium text-slate-200">808_sub_bass_loop_140bpm.wav</p>
                             <span class="text-[10px] text-slate-500 mono-font">4.8 MB • Cloud Drive</span>
-                        </div>
-                    </div>
-                    <span class="text-xs text-slate-500 check-icon"><i class="fa-regular fa-square"></i></span>
-                </div>
-
-                <div onclick="toggleCloudItem(this)" class="cloud-item flex items-center justify-between p-2.5 rounded-lg hover:bg-izoPanel cursor-pointer border border-transparent transition-all">
-                    <div class="flex items-center space-x-3">
-                        <i class="fa-solid fa-file-audio text-izoGreen"></i>
-                        <div>
-                            <p class="text-xs font-medium text-slate-200">synth_pad_ambient_sketch.mp3</p>
-                            <span class="text-[10px] text-slate-500 mono-font">12.1 MB • Cloud Drive</span>
                         </div>
                     </div>
                     <span class="text-xs text-slate-500 check-icon"><i class="fa-regular fa-square"></i></span>
@@ -267,20 +258,27 @@
     </div>
 
     <script>
-        // Initial mock track database inspired by producer workflows
-        let tracks = [
-            { id: '1', name: 'project_v3_final_mixdown.wav', duration: '3:42', bpm: '128 BPM', style: 'House / Techno', completion: 'Completed', size: '38.4 MB', date: '2026-04-01' },
-            { id: '2', name: 'synth_arp_loop_8bar.mp3', duration: '0:16', bpm: '140 BPM', style: 'Hip Hop / Trap', completion: 'Sketch', size: '2.4 MB', date: '2026-04-02' },
-            { id: '3', name: 'ambient_texture_pad_draft.wav', duration: '2:15', bpm: '85 BPM', style: 'Ambient / Cinematic', completion: 'Unfinished', size: '24.1 MB', date: '2026-04-03' },
-            { id: '4', name: 'pop_vocal_hook_idea.wav', duration: '0:32', bpm: '118 BPM', style: 'Pop / Electronic', completion: 'Sketch', size: '5.8 MB', date: '2026-04-04' }
-        ];
+        let tracks = [];
 
         window.onload = function() {
-            renderTracks(tracks);
-            updateMetrics();
+            // Automatically load test suite on startup so the user sees a functional dashboard immediately
+            loadSampleSuite();
         };
 
-        // File Drag & Drop Handling
+        function loadSampleSuite() {
+            tracks = [
+                { id: 'test_1', name: 'project_v3_final_mixdown.wav', duration: '3:42', bpm: '128 BPM', style: 'House / Techno', completion: 'Completed', size: '38.4 MB', date: '2026-04-01' },
+                { id: 'test_2', name: 'synth_arp_loop_8bar.mp3', duration: '0:16', bpm: '140 BPM', style: 'Hip Hop / Trap', completion: 'Sketch', size: '2.4 MB', date: '2026-04-02' },
+                { id: 'test_3', name: 'ambient_texture_pad_draft.wav', duration: '2:15', bpm: '85 BPM', style: 'Ambient / Cinematic', completion: 'Unfinished', size: '24.1 MB', date: '2026-04-03' },
+                { id: 'test_4', name: 'pop_vocal_hook_idea.wav', duration: '0:32', bpm: '118 BPM', style: 'Pop / Electronic', completion: 'Sketch', size: '5.8 MB', date: '2026-04-04' },
+                { id: 'test_5', name: 'heavy_808_sub_bass_bounce.wav', duration: '1:48', bpm: '142 BPM', style: 'Hip Hop / Trap', completion: 'Completed', size: '18.2 MB', date: '2026-04-04' }
+            ];
+            renderTracks(tracks);
+            updateMetrics();
+            showToast('Test Suite Loaded', 'Successfully loaded 5 pre-configured audio tracks for evaluation.');
+        }
+
+        // File Drag & Drop Handling with real Web Audio API duration extraction
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
 
@@ -441,12 +439,10 @@
 
         function toggleCloudItem(el) {
             const iconSpan = el.querySelector('.check-icon');
-            if (el.classList.contains('bg-izoPanelBorder') || el.classList.contains('bg-izoPanel')) {
-                el.classList.toggle('bg-izoPanel');
-                el.classList.toggle('border-izoCyan');
-                const isSelected = el.classList.contains('border-izoCyan');
-                iconSpan.innerHTML = isSelected ? '<i class="fa-solid fa-square-check text-izoCyan text-sm"></i>' : '<i class="fa-regular fa-square"></i>';
-            }
+            el.classList.toggle('bg-izoPanel');
+            el.classList.toggle('border-izoCyan');
+            const isSelected = el.classList.contains('border-izoCyan');
+            iconSpan.innerHTML = isSelected ? '<i class="fa-solid fa-square-check text-izoCyan text-sm"></i>' : '<i class="fa-regular fa-square"></i>';
             updateCloudCount();
         }
 
@@ -464,7 +460,7 @@
             tracks.unshift(...cloudTracks);
             renderTracks(tracks);
             updateMetrics();
-            showToast('Cloud Sync Success', 'Successfully imported 2 tracks from Google Drive.');
+            showToast('Cloud Sync Success', 'Successfully imported 2 tracks from Google Drive simulation.');
         }
 
         function runAutoTag() {
@@ -473,7 +469,7 @@
             });
             renderTracks(tracks);
             updateMetrics();
-            showToast('AI Auto-Tagging', 'Cloud heuristic heuristic engine successfully scanned and verified metadata tags.');
+            showToast('AI Auto-Tagging', 'Cloud heuristic engine successfully scanned and verified metadata tags.');
         }
 
         function exportLibraryJSON() {
