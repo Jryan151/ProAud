@@ -97,7 +97,7 @@
 
             } catch (error) {
                 console.error('Upload failed:', error);
-                resultBox.innerText = 'Error: ' + error.message;
+                resultBox.innerText = 'Error: ' + error.message + '\n\nNote: If this is a Mixed Content error, your browser is blocking HTTP requests from an HTTPS GitHub Pages site.';
                 alert('Failed to analyze audio. Check console for details.');
             } finally {
                 submitBtn.disabled = false;
