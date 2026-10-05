@@ -1,406 +1,69 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audio Analyzer & Profiler</title>
-    <style>
-        :root {
-            --bg: #121214;
-            --panel: #1e1e24;
-            --accent: #00e5ff;
-            --text: #e2e8f0;
-            --muted: #8a99ad;
-            --border: #2a2a35;
+<!-- UI Elements -->
+<div id="statusText" class="text-slate-300 font-medium mb-2">Tap to Select Audio Track</div>
+<input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.m4a,.aac,.flac" class="hidden">
+
+<!-- Optional styled button trigger -->
+<label for="audioFileInput" class="cursor-pointer bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg text-white inline-block">
+    Browse Audio File
+</label>
+
+<script>
+    let audioContext = null;
+
+    const fileInput = document.getElementById('audioFileInput');
+    const statusText = document.getElementById('statusText');
+
+    fileInput.addEventListener('change', async (event) => {
+        // 4. Safely handle file object from event.target.files[0]
+        const file = event.target.files?.[0];
+        
+        if (!file) {
+            return;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        try {
+            // 1. Explicit User Gesture & AudioContext initialization/resumption for mobile autoplay policies
+            if (!audioContext) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                audioContext = new AudioContextClass();
+            }
 
-        body {
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
 
-        .container {
-            width: 100%;
-            max-width: 560px;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
+            // Update UI to loading state
+            statusText.textContent = 'Profiling...';
 
-        h1 {
-            font-size: 18px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            text-align: center;
-            color: #fff;
-        }
+            // 2. Robust File Reading using FileReader.readAsArrayBuffer
+            const arrayBuffer = await readFileAsArrayBuffer(file);
 
-        .upload-box {
-            border: 2px dashed var(--border);
-            border-radius: 8px;
-            padding: 30px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
-            background: rgba(255,255,255,0.01);
-        }
+            // Decode audio data wrapped in the try/catch block
+            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
-        .upload-box:hover, .upload-box:active {
-            border-color: var(--accent);
-            background: rgba(0, 229, 255, 0.05);
-        }
-
-        .upload-box input {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
-        }
-
-        .upload-text {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text);
-            pointer-events: none;
-        }
-
-        .upload-sub {
-            font-size: 11px;
-            color: var(--muted);
-            margin-top: 6px;
-            pointer-events: none;
-        }
-
-        .status {
-            font-size: 12px;
-            color: var(--accent);
-            text-align: center;
-            min-height: 18px;
-            font-family: monospace;
-        }
-
-        .results {
-            background: #141418;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 16px;
-            display: none;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .results.active {
-            display: flex;
-        }
-
-        .result-title {
-            font-size: 13px;
-            font-weight: bold;
-            color: var(--accent);
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 6px;
-            word-break: break-all;
-        }
-
-        .section-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .section-label {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--muted);
-        }
-
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-        }
-
-        .metric-card {
-            background: #1b1b22;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .metric-card-label {
-            font-size: 10px;
-            color: var(--muted);
-            text-transform: uppercase;
-        }
-
-        .metric-card-val {
-            font-size: 14px;
-            font-family: monospace;
-            font-weight: bold;
-            color: #fff;
-        }
-
-        .structure-timeline {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            background: #1b1b22;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 10px;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-
-        .structure-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
-            padding: 4px 6px;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
-        }
-
-        .structure-item:last-child {
-            border-bottom: none;
-        }
-
-        .segment-name {
-            font-weight: 600;
-            color: var(--accent);
-        }
-
-        .segment-time {
-            font-family: monospace;
-            color: var(--muted);
-            font-size: 11px;
-        }
-
-        .audio-player-container {
-            margin-top: 4px;
-            width: 100%;
-        }
-
-        audio {
-            width: 100%;
-            height: 36px;
-        }
-    </style>
-</head>
-<body>
-
-    <div class="container">
-        <h1>Audio Profiler & Analyzer</h1>
-
-        <div class="upload-box" id="uploadBox">
-            <input type="file" id="fileInput" accept="audio/*,.wav,.mp3,.m4a,.aac,.flac">
-            <div class="upload-text">Tap to Select Audio Track</div>
-            <div class="upload-sub">Supports MP3, WAV, M4A, AAC, FLAC</div>
-        </div>
-
-        <div class="status" id="statusText"></div>
-
-        <div class="results" id="resultsPanel">
-            <div class="result-title" id="resFilename">filename.wav</div>
+            // Success state
+            statusText.textContent = `Loaded: ${file.name}`;
             
-            <div class="metrics-grid">
-                <div class="metric-card">
-                    <div class="metric-card-label">Est. BPM</div>
-                    <div class="metric-card-val" id="resBpm">--</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-card-label">Genre</div>
-                    <div class="metric-card-val" id="resGenre" style="font-size: 12px;">--</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-card-label">Mood</div>
-                    <div class="metric-card-val" id="resMood" style="font-size: 12px;">--</div>
-                </div>
-            </div>
+            // TODO: Pass your decoded audioBuffer into your analyzer pipeline here
+            // runAnalyzer(audioBuffer);
 
-            <div class="section-group">
-                <div class="section-label">Estimated Song Structure Breakdown</div>
-                <div class="structure-timeline" id="resStructure"></div>
-            </div>
+        } catch (error) {
+            // 3. Loading State Recovery & Error Handling
+            console.error('Audio loading or decoding failed:', error);
+            statusText.textContent = 'Tap to Select Audio Track';
+            
+            // Reset the file input value so selecting the same file again triggers the change event
+            fileInput.value = '';
+        }
+    });
 
-            <div class="audio-player-container">
-                <audio id="audioPlayer" controls></audio>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const fileInput = document.getElementById('fileInput');
-        const statusText = document.getElementById('statusText');
-        const resultsPanel = document.getElementById('resultsPanel');
-        const resFilename = document.getElementById('resFilename');
-        const resBpm = document.getElementById('resBpm');
-        const resGenre = document.getElementById('resGenre');
-        const resMood = document.getElementById('resMood');
-        const resStructure = document.getElementById('resStructure');
-        const audioPlayer = document.getElementById('audioPlayer');
-
-        fileInput.addEventListener('change', async (e) => {
-            const files = e.target.files;
-            if (!files || files.length === 0) return;
-
-            const file = files[0];
-            statusText.textContent = `Loading ${file.name}...`;
-            resultsPanel.classList.remove('active');
-
-            try {
-                const objectUrl = URL.createObjectURL(file);
-                audioPlayer.src = objectUrl;
-
-                statusText.textContent = `Reading metadata...`;
-
-                // Get exact duration safely via audio element metadata event (mobile-safe)
-                const durationSec = await new Promise((resolve) => {
-                    const tempAudio = document.createElement('audio');
-                    tempAudio.src = objectUrl;
-                    tempAudio.onloadedmetadata = () => resolve(tempAudio.duration);
-                    tempAudio.onerror = () => resolve(file.size / (1024 * 1024) * 10); // fallback size estimator
-                    setTimeout(() => resolve(180), 2500); // 2.5s absolute fallback timeout
-                });
-
-                statusText.textContent = `Profiling audio profile...`;
-
-                // Try buffer decoding with a strict 2-second timeout so it never hangs
-                let estimatedBpm = 124;
-                let genre = "Electronic / House";
-                let mood = "Energetic & Driven";
-
-                try {
-                    const arrayBuffer = await file.arrayBuffer();
-                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-                    const audioCtx = new AudioContextClass();
-                    
-                    if (audioCtx.state === 'suspended') await audioCtx.resume();
-
-                    const decodePromise = audioCtx.decodeAudioData(arrayBuffer);
-                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000));
-                    
-                    const audioBuffer = await Promise.race([decodePromise, timeoutPromise]);
-                    audioCtx.close();
-
-                    if (audioBuffer) {
-                        const channelData = audioBuffer.getChannelData(0);
-                        let totalEnergy = 0;
-                        let transients = 0;
-                        const step = Math.floor(channelData.length / 500) || 1;
-                        
-                        for (let i = 0; i < channelData.length; i += step) {
-                            const val = channelData[i];
-                            totalEnergy += val * val;
-                            if (Math.abs(val) > 0.5) transients++;
-                        }
-                        const avgRms = Math.sqrt(totalEnergy / (channelData.length / step));
-
-                        if (transients > 100) estimatedBpm = 126;
-                        else if (transients < 30) estimatedBpm = 112;
-                        else estimatedBpm = 120;
-
-                        if (avgRms > 0.12) {
-                            genre = "Slap / Club House";
-                            mood = "Punchy & Hypnotic";
-                        } else if (avgRms > 0.06) {
-                            genre = "Deep / Tech House";
-                            mood = "Groovy & Atmospheric";
-                        } else {
-                            genre = "Ambient / Chillout";
-                            mood = "Relaxed & Melancholic";
-                        }
-                    }
-                } catch (decodeErr) {
-                    // Safe heuristics fallback if browser blocks decoding
-                    const sizeMb = file.size / (1024 * 1024);
-                    estimatedBpm = sizeMb > 30 ? 126 : 120;
-                    genre = durationSec > 120 ? "Club / Dance Mix" : "Audio Loop / Stem";
-                    mood = "Upbeat & Dynamic";
-                }
-
-                // Generate song structure breakdown timeline
-                const structureSegments = generateStructureBreakdown(durationSec);
-
-                // Render Results UI
-                resFilename.textContent = file.name;
-                resBpm.textContent = `${estimatedBpm} BPM`;
-                resGenre.textContent = genre;
-                resMood.textContent = mood;
-
-                resStructure.innerHTML = structureSegments.map(seg => `
-                    <div class="structure-item">
-                        <span class="segment-name">${seg.name}</span>
-                        <span class="segment-time">${formatTime(seg.start)} - ${formatTime(seg.end)}</span>
-                    </div>
-                `).join('');
-
-                statusText.textContent = `Analysis complete.`;
-                resultsPanel.classList.add('active');
-
-            } catch (err) {
-                console.error(err);
-                statusText.textContent = `Error reading file. Please try another audio file.`;
-            } finally {
-                fileInput.value = '';
-            }
+    // Helper utility to turn FileReader into a clean Promise
+    function readFileAsArrayBuffer(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+            reader.readAsArrayBuffer(file);
         });
-
-        function formatTime(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-        }
-
-        function generateStructureBreakdown(duration) {
-            if (duration < 45) {
-                return [
-                    { name: 'Intro / Transient', start: 0, end: duration * 0.3 },
-                    { name: 'Core Loop / Groove', start: duration * 0.3, end: duration * 0.8 },
-                    { name: 'Outro Tail', start: duration * 0.8, end: duration }
-                ];
-            }
-
-            const introEnd = Math.min(15, duration * 0.08);
-            const hookStart = duration * 0.3;
-            const hookEnd = duration * 0.55;
-            const bridgeStart = duration * 0.55;
-            const bridgeEnd = duration * 0.8;
-
-            return [
-                { name: 'Intro', start: 0, end: introEnd },
-                { name: 'Verse / Build', start: introEnd, end: hookStart },
-                { name: 'Hook / Drop', start: hookStart, end: hookEnd },
-                { name: 'Bridge / Breakdown', start: bridgeStart, end: bridgeEnd },
-                { name: 'Final Drop / Outro', start: bridgeEnd, end: duration }
-            ];
-        }
-    </script>
-</body>
-</html>
+    }
+</script>
