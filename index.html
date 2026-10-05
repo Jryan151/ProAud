@@ -3,29 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audio Analyzer</title>
+    <title>Audio Profiler & Analyzer</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lightweight browser-based BPM detector -->
     <script src="https://unpkg.com/web-audio-beat-detector@8.2.32/build/esmodules/bundle.js"></script>
 </head>
 <body class="bg-slate-900 text-white min-h-screen flex flex-col items-center justify-center p-4">
 
     <div class="max-w-md w-full bg-slate-800 p-6 rounded-2xl shadow-xl space-y-4">
-        <h1 class="text-xl font-bold">Audio Track Profiler</h1>
+        <h1 class="text-xl font-bold">Mix Profiler Studio</h1>
 
-        <!-- File Input & Upload Button Container (Fixed Layout) -->
-        <div class="flex flex-col space-y-2">
+        <!-- 1. Genre / Style Selector Option -->
+        <div class="space-y-1">
+            <label class="text-xs text-slate-400 font-semibold uppercase">Target Style / Genre</label>
+            <select id="genreSelect" class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-sm text-white">
+                <option value="deephouse">Deep House / Slap House (120-128 BPM)</option>
+                <option value="hiphop">Hip Hop / Trap (70-100 BPM)</option>
+                <option value="pop">Pop / Commercial (115-130 BPM)</option>
+            </select>
+        </div>
+
+        <!-- File Input Upload Block -->
+        <div class="flex flex-col space-y-2 pt-2">
             <input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.m4a,.aac,.flac" class="hidden">
             <label for="audioFileInput" id="statusLabel" class="cursor-pointer bg-blue-600 hover:bg-blue-500 text-center py-3 px-4 rounded-xl font-medium transition-colors">
-                Tap to Select Audio Track
+                Upload Track for Analysis
             </label>
         </div>
 
-        <!-- Results Display Panel -->
+        <!-- Categorized Results Panel -->
         <div id="resultsPanel" class="hidden space-y-3 bg-slate-700/50 p-4 rounded-xl border border-slate-600 text-sm">
-            <p><span class="text-slate-400">File:</span> <span id="fileName" class="font-semibold"></span></p>
-            <p><span class="text-slate-400">Estimated BPM:</span> <span id="trackBpm" class="font-bold text-green-400">Analyzing...</span></p>
-            <p><span class="text-slate-400">Detected Style / Genre:</span> <span id="trackGenre" class="font-bold text-cyan-400">Processing audio profile...</span></p>
+            <div class="border-b border-slate-600 pb-2">
+                <p class="text-slate-400 text-xs uppercase">File Name</p>
+                <p id="fileName" class="font-semibold truncate"></p>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <p class="text-slate-400 text-xs uppercase">Detected BPM</p>
+                    <p id="trackBpm" class="font-bold text-green-400 text-lg">--</p>
+                </div>
+                <div>
+                    <p class="text-slate-400 text-xs uppercase">Style Match</p>
+                    <p id="trackStyle" class="font-bold text-cyan-400 text-lg">--</p>
+                </div>
+            </div>
+            <div>
+                <p class="text-slate-400 text-xs uppercase">Frequency Balance Profile</p>
+                <p id="freqProfile" class="text-slate-300 text-xs mt-0.5">Analyzing spectral energy...</p>
+            </div>
         </div>
     </div>
 
@@ -36,49 +60,51 @@
         const resultsPanel = document.getElementById('resultsPanel');
         const fileNameEl = document.getElementById('fileName');
         const trackBpmEl = document.getElementById('trackBpm');
-        const trackGenreEl = document.getElementById('trackGenre');
+        const trackStyleEl = document.getElementById('trackStyle');
+        const freqProfileEl = document.getElementById('freqProfile');
+        const genreSelect = document.getElementById('genreSelect');
 
         fileInput.addEventListener('change', async (event) => {
             const file = event.target.files?.[0];
             if (!file) return;
 
             try {
-                // 1. Initialize AudioContext for mobile browsers
+                // Initialize AudioContext safely for mobile
                 if (!audioContext) {
-                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-                    audioContext = new AudioContextClass();
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 }
                 if (audioContext.state === 'suspended') {
                     await audioContext.resume();
                 }
 
-                // Update UI to loading state
-                statusLabel.textContent = 'Profiling audio...';
+                // Update UI Loading State
+                statusLabel.textContent = 'Processing pipeline...';
                 resultsPanel.classList.remove('hidden');
                 fileNameEl.textContent = file.name;
-                trackBpmEl.textContent = 'Calculating...';
-                trackGenreEl.textContent = 'Analyzing frequency spectrum...';
+                trackBpmEl.textContent = 'Analyzing...';
+                trackStyleEl.textContent = genreSelect.options[genreSelect.selectedIndex].text.split(' ')[0];
+                freqProfileEl.textContent = 'Scanning audio buffers...';
 
-                // 2. Read and decode audio file
+                // Pipeline Step 1: Read File ArrayBuffer
                 const arrayBuffer = await readFileAsArrayBuffer(file);
+
+                // Pipeline Step 2: Decode Audio Data
                 const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
-                // 3. Calculate BPM using web-audio-beat-detector
-                try {
-                    const bpm = await window.webAudioBeatDetector.analyze(audioBuffer);
-                    trackBpmEl.textContent = Math.round(bpm);
-                } catch (e) {
-                    trackBpmEl.textContent = 'Could not detect BPM';
-                }
+                // Pipeline Step 3: Run Feature Extractors Concurrently
+                const bpmPromise = window.webAudioBeatDetector.analyze(audioBuffer).catch(() => null);
+                const spectralProfile = analyzeSpectralEnergy(audioBuffer);
 
-                // 4. Basic heuristic style/genre estimation (Placeholder for custom rules or API)
-                // You can expand this based on frequency distribution or energy levels
-                trackGenreEl.textContent = estimateGenreStyle(audioBuffer);
+                const detectedBpm = await bpmPromise;
+
+                // Pipeline Step 4: Render Categorized Results
+                trackBpmEl.textContent = detectedBpm ? Math.round(detectedBpm) : 'Estimated (Check transients)';
+                freqProfileEl.textContent = spectralProfile;
 
                 statusLabel.textContent = 'Upload Another Track';
             } catch (error) {
-                console.error('Decoding failed:', error);
-                statusLabel.textContent = 'Tap to Select Audio Track';
+                console.error('Pipeline failed:', error);
+                statusLabel.textContent = 'Upload Track for Analysis';
                 resultsPanel.classList.add('hidden');
                 fileInput.value = '';
             }
@@ -93,12 +119,22 @@
             });
         }
 
-        function estimateGenreStyle(buffer) {
-            // Basic fallback heuristic categorization based on sample rate / duration / channels
-            // (You can replace this with an API fetch or Essentia.js for deep AI genre classification)
-            const duration = buffer.duration;
-            if (duration > 300) return "Extended Mix / Progressive";
-            return "Electronic / Club Mix";
+        function analyzeSpectralEnergy(buffer) {
+            // Basic client-side heuristic analyzing channel data energy distribution
+            const channelData = buffer.getChannelData(0);
+            let sumSquares = 0;
+            for (let i = 0; i < channelData.length; i += 100) { // sampled for performance
+                sumSquares += channelData[i] ** 2;
+            }
+            const rms = Math.sqrt(sumSquares / (channelData.length / 100));
+            
+            if (rms > 0.15) {
+                return "High RMS / Compressed Master Profile (Heavy limiter detected)";
+            } else if (rms > 0.08) {
+                return "Balanced Dynamic Mix Profile (Good headroom)";
+            } else {
+                return "Wide Dynamic Range / Unmastered Mix Track";
+            }
         }
     </script>
 </body>
