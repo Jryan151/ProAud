@@ -39,7 +39,11 @@
             cursor: pointer;
             width: 100%;
         }
-        button:hover {
+        button:disabled {
+            background: #64748b;
+            cursor: not-allowed;
+        }
+        button:hover:not(:disabled) {
             background: #2563eb;
         }
         #result {
@@ -62,13 +66,14 @@
     <div class="card">
         <h2>Audio Analysis</h2>
         <input type="file" id="audioFile" accept="audio/*">
-        <button onclick="analyzeAudio()">Generate Brief</button>
+        <button id="submitBtn" onclick="analyzeAudio()">Generate Brief</button>
         <div id="result"></div>
     </div>
 
     <script>
         async function analyzeAudio() {
             const fileInput = document.getElementById('audioFile');
+            const submitBtn = document.getElementById('submitBtn');
             const resultDiv = document.getElementById('result');
 
             if (fileInput.files.length === 0) {
@@ -79,6 +84,11 @@
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
 
+            // Lock UI controls during processing
+            fileInput.disabled = true;
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Analyzing...';
+            
             resultDiv.style.display = 'block';
             resultDiv.innerText = 'Analyzing audio... Please wait.';
 
@@ -92,13 +102,19 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Server error: ${response.statusText}`);
+                    const errorText = await response.text();
+                    throw new Error(`Server error (${response.status}): ${errorText || response.statusText}`);
                 }
 
                 const data = await response.json();
                 resultDiv.innerText = JSON.stringify(data, null, 2);
             } catch (error) {
                 resultDiv.innerText = `Error: ${error.message}`;
+            } finally {
+                // Always unlock UI elements whether the request succeeds or fails
+                fileInput.disabled = false;
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'Generate Brief';
             }
         }
     </script>
