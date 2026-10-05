@@ -3,72 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AudiPro Audio Analysis</title>
+    <title>Audio Analysis Pipeline</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #121212;
-            color: #e0e0e0;
-            max-width: 600px;
-            margin: 40px auto;
-            padding: 20px;
+            background-color: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
         }
         .card {
-            background: #1e1e1e;
-            padding: 24px;
+            background: #1e293b;
+            padding: 2rem;
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
         }
         input[type="file"] {
-            margin: 16px 0;
+            margin: 1rem 0;
             width: 100%;
-            color: #fff;
+            color: #94a3b8;
         }
         button {
-            background-color: #1DB954;
+            background: #3b82f6;
             color: white;
             border: none;
-            padding: 12px 20px;
-            font-size: 16px;
+            padding: 0.75rem 1.5rem;
             border-radius: 6px;
+            font-weight: bold;
             cursor: pointer;
             width: 100%;
         }
         button:hover {
-            background-color: #1ed760;
+            background: #2563eb;
         }
-        button:disabled {
-            background-color: #555;
-            cursor: not-allowed;
-        }
-        pre {
-            background: #2d2d2d;
-            padding: 16px;
+        #result {
+            margin-top: 1.5rem;
+            text-align: left;
+            background: #0f172a;
+            padding: 1rem;
             border-radius: 6px;
-            overflow-x: auto;
-            margin-top: 20px;
-            font-size: 14px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            display: none;
+            max-height: 250px;
+            overflow-y: auto;
         }
     </style>
 </head>
 <body>
+
     <div class="card">
-        <h2>AudiPro Analysis Tool</h2>
-        <form id="uploadForm">
-            <!-- No strict file type filter for iOS / mobile Safari compatibility -->
-            <input type="file" id="audioFile" required>
-            <button type="submit" id="submitBtn">Generate Brief</button>
-        </form>
-        <pre id="result">Results will appear here...</pre>
+        <h2>Audio Analysis</h2>
+        <input type="file" id="audioFile" accept="audio/*">
+        <button onclick="analyzeAudio()">Generate Brief</button>
+        <div id="result"></div>
     </div>
 
     <script>
-        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
+        async function analyzeAudio() {
             const fileInput = document.getElementById('audioFile');
-            const submitBtn = document.getElementById('submitBtn');
-            const resultBox = document.getElementById('result');
+            const resultDiv = document.getElementById('result');
 
             if (fileInput.files.length === 0) {
                 alert('Please select an audio file first.');
@@ -78,32 +79,29 @@
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
 
-            submitBtn.disabled = true;
-            submitBtn.innerText = 'Analyzing...';
-            resultBox.innerText = 'Uploading and processing audio on server...';
+            resultDiv.style.display = 'block';
+            resultDiv.innerText = 'Analyzing audio... Please wait.';
 
             try {
-                const response = await fetch('http://2.29.34.238:8000/analyze/', {
+                // REPLACE THE URL BELOW WITH YOUR ACTUAL CLOUDFLARE TUNNEL URL
+                const BACKEND_URL = 'https://YOUR_CLOUDFLARE_URL.trycloudflare.com/analyze/';
+
+                const response = await fetch(BACKEND_URL, {
                     method: 'POST',
                     body: formData
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Server returned status ${response.status}`);
+                    throw new Error(`Server error: ${response.statusText}`);
                 }
 
                 const data = await response.json();
-                resultBox.innerText = JSON.stringify(data, null, 2);
-
+                resultDiv.innerText = JSON.stringify(data, null, 2);
             } catch (error) {
-                console.error('Upload failed:', error);
-                resultBox.innerText = 'Error: ' + error.message + '\n\nNote: If this is a Mixed Content error, your browser is blocking HTTP requests from an HTTPS GitHub Pages site.';
-                alert('Failed to analyze audio. Check console for details.');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerText = 'Generate Brief';
+                resultDiv.innerText = `Error: ${error.message}`;
             }
-        });
+        }
     </script>
+
 </body>
 </html>
