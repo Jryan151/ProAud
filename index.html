@@ -1,69 +1,105 @@
-<!-- UI Elements -->
-<div id="statusText" class="text-slate-300 font-medium mb-2">Tap to Select Audio Track</div>
-<input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.m4a,.aac,.flac" class="hidden">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lightweight browser-based BPM detector -->
+    <script src="https://unpkg.com/web-audio-beat-detector@8.2.32/build/esmodules/bundle.js"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col items-center justify-center p-4">
 
-<!-- Optional styled button trigger -->
-<label for="audioFileInput" class="cursor-pointer bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg text-white inline-block">
-    Browse Audio File
-</label>
+    <div class="max-w-md w-full bg-slate-800 p-6 rounded-2xl shadow-xl space-y-4">
+        <h1 class="text-xl font-bold">Audio Track Profiler</h1>
 
-<script>
-    let audioContext = null;
+        <!-- File Input & Upload Button Container (Fixed Layout) -->
+        <div class="flex flex-col space-y-2">
+            <input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.m4a,.aac,.flac" class="hidden">
+            <label for="audioFileInput" id="statusLabel" class="cursor-pointer bg-blue-600 hover:bg-blue-500 text-center py-3 px-4 rounded-xl font-medium transition-colors">
+                Tap to Select Audio Track
+            </label>
+        </div>
 
-    const fileInput = document.getElementById('audioFileInput');
-    const statusText = document.getElementById('statusText');
+        <!-- Results Display Panel -->
+        <div id="resultsPanel" class="hidden space-y-3 bg-slate-700/50 p-4 rounded-xl border border-slate-600 text-sm">
+            <p><span class="text-slate-400">File:</span> <span id="fileName" class="font-semibold"></span></p>
+            <p><span class="text-slate-400">Estimated BPM:</span> <span id="trackBpm" class="font-bold text-green-400">Analyzing...</span></p>
+            <p><span class="text-slate-400">Detected Style / Genre:</span> <span id="trackGenre" class="font-bold text-cyan-400">Processing audio profile...</span></p>
+        </div>
+    </div>
 
-    fileInput.addEventListener('change', async (event) => {
-        // 4. Safely handle file object from event.target.files[0]
-        const file = event.target.files?.[0];
-        
-        if (!file) {
-            return;
-        }
+    <script>
+        let audioContext = null;
+        const fileInput = document.getElementById('audioFileInput');
+        const statusLabel = document.getElementById('statusLabel');
+        const resultsPanel = document.getElementById('resultsPanel');
+        const fileNameEl = document.getElementById('fileName');
+        const trackBpmEl = document.getElementById('trackBpm');
+        const trackGenreEl = document.getElementById('trackGenre');
 
-        try {
-            // 1. Explicit User Gesture & AudioContext initialization/resumption for mobile autoplay policies
-            if (!audioContext) {
-                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-                audioContext = new AudioContextClass();
+        fileInput.addEventListener('change', async (event) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            try {
+                // 1. Initialize AudioContext for mobile browsers
+                if (!audioContext) {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    audioContext = new AudioContextClass();
+                }
+                if (audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                }
+
+                // Update UI to loading state
+                statusLabel.textContent = 'Profiling audio...';
+                resultsPanel.classList.remove('hidden');
+                fileNameEl.textContent = file.name;
+                trackBpmEl.textContent = 'Calculating...';
+                trackGenreEl.textContent = 'Analyzing frequency spectrum...';
+
+                // 2. Read and decode audio file
+                const arrayBuffer = await readFileAsArrayBuffer(file);
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+                // 3. Calculate BPM using web-audio-beat-detector
+                try {
+                    const bpm = await window.webAudioBeatDetector.analyze(audioBuffer);
+                    trackBpmEl.textContent = Math.round(bpm);
+                } catch (e) {
+                    trackBpmEl.textContent = 'Could not detect BPM';
+                }
+
+                // 4. Basic heuristic style/genre estimation (Placeholder for custom rules or API)
+                // You can expand this based on frequency distribution or energy levels
+                trackGenreEl.textContent = estimateGenreStyle(audioBuffer);
+
+                statusLabel.textContent = 'Upload Another Track';
+            } catch (error) {
+                console.error('Decoding failed:', error);
+                statusLabel.textContent = 'Tap to Select Audio Track';
+                resultsPanel.classList.add('hidden');
+                fileInput.value = '';
             }
-
-            if (audioContext.state === 'suspended') {
-                await audioContext.resume();
-            }
-
-            // Update UI to loading state
-            statusText.textContent = 'Profiling...';
-
-            // 2. Robust File Reading using FileReader.readAsArrayBuffer
-            const arrayBuffer = await readFileAsArrayBuffer(file);
-
-            // Decode audio data wrapped in the try/catch block
-            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-
-            // Success state
-            statusText.textContent = `Loaded: ${file.name}`;
-            
-            // TODO: Pass your decoded audioBuffer into your analyzer pipeline here
-            // runAnalyzer(audioBuffer);
-
-        } catch (error) {
-            // 3. Loading State Recovery & Error Handling
-            console.error('Audio loading or decoding failed:', error);
-            statusText.textContent = 'Tap to Select Audio Track';
-            
-            // Reset the file input value so selecting the same file again triggers the change event
-            fileInput.value = '';
-        }
-    });
-
-    // Helper utility to turn FileReader into a clean Promise
-    function readFileAsArrayBuffer(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = (error) => reject(error);
-            reader.readAsArrayBuffer(file);
         });
-    }
-</script>
+
+        function readFileAsArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = (error) => reject(error);
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        function estimateGenreStyle(buffer) {
+            // Basic fallback heuristic categorization based on sample rate / duration / channels
+            // (You can replace this with an API fetch or Essentia.js for deep AI genre classification)
+            const duration = buffer.duration;
+            if (duration > 300) return "Extended Mix / Progressive";
+            return "Electronic / Club Mix";
+        }
+    </script>
+</body>
+</html>
