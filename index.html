@@ -3,137 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audio Profiler & Analyzer</title>
+    <title>Audio Analysis Brief Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/web-audio-beat-detector@8.2.32/build/esmodules/bundle.js"></script>
 </head>
-<body class="bg-slate-900 text-white min-h-screen flex flex-col items-center justify-center p-4">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center p-6">
 
-    <div class="max-w-md w-full bg-slate-800 p-6 rounded-2xl shadow-xl space-y-4">
-        <h1 class="text-xl font-bold">Mix Profiler Studio</h1>
+    <div class="max-w-xl w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
+        <h1 class="text-2xl font-bold mb-2 text-indigo-400">Audio Brief Generator</h1>
+        <p class="text-slate-400 text-sm mb-6">Upload an audio track to extract tempo, duration, and feature profiles via your backend server.</p>
 
-        <!-- 1. Genre / Style Selector Option -->
-        <div class="space-y-1">
-            <label class="text-xs text-slate-400 font-semibold uppercase">Target Style / Genre</label>
-            <select id="genreSelect" class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-sm text-white">
-                <option value="deephouse">Deep House / Slap House (120-128 BPM)</option>
-                <option value="hiphop">Hip Hop / Trap (70-100 BPM)</option>
-                <option value="pop">Pop / Commercial (115-130 BPM)</option>
-            </select>
+        <!-- Configuration: Server IP -->
+        <div class="mb-4">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Backend API URL</label>
+            <input type="text" id="apiUrl" value="http://YOUR_SERVER_IP:8000/analyze/" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
         </div>
 
-        <!-- File Input Upload Block -->
-        <div class="flex flex-col space-y-2 pt-2">
-            <input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.m4a,.aac,.flac" class="hidden">
-            <label for="audioFileInput" id="statusLabel" class="cursor-pointer bg-blue-600 hover:bg-blue-500 text-center py-3 px-4 rounded-xl font-medium transition-colors">
-                Upload Track for Analysis
-            </label>
+        <!-- File Drop / Upload Zone -->
+        <div class="mb-6">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Audio File (.mp3, .wav)</label>
+            <input type="file" id="audioFile" accept="audio/*" class="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer">
         </div>
 
-        <!-- Categorized Results Panel -->
-        <div id="resultsPanel" class="hidden space-y-3 bg-slate-700/50 p-4 rounded-xl border border-slate-600 text-sm">
-            <div class="border-b border-slate-600 pb-2">
-                <p class="text-slate-400 text-xs uppercase">File Name</p>
-                <p id="fileName" class="font-semibold truncate"></p>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-                <div>
-                    <p class="text-slate-400 text-xs uppercase">Detected BPM</p>
-                    <p id="trackBpm" class="font-bold text-green-400 text-lg">--</p>
+        <button onclick="analyzeAudio()" id="submitBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-lg transition-all shadow-lg shadow-indigo-600/20">
+            Generate Brief
+        </button>
+
+        <!-- Loading State -->
+        <div id="loader" class="hidden mt-6 text-center text-slate-400 text-sm animate-pulse">
+            Analyzing audio features on server...
+        </div>
+
+        <!-- Results / Brief Display -->
+        <div id="resultContainer" class="hidden mt-8 border-t border-slate-800 pt-6 space-y-4">
+            <h2 class="text-lg font-semibold text-slate-200">Production Brief</h2>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800/60">
+                    <span class="text-xs text-slate-500 block uppercase">Tempo (BPM)</span>
+                    <span id="resBpm" class="text-xl font-bold text-indigo-400">--</span>
                 </div>
-                <div>
-                    <p class="text-slate-400 text-xs uppercase">Style Match</p>
-                    <p id="trackStyle" class="font-bold text-cyan-400 text-lg">--</p>
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800/60">
+                    <span class="text-xs text-slate-500 block uppercase">Duration</span>
+                    <span id="resDuration" class="text-xl font-bold text-slate-200">--</span>
                 </div>
             </div>
-            <div>
-                <p class="text-slate-400 text-xs uppercase">Frequency Balance Profile</p>
-                <p id="freqProfile" class="text-slate-300 text-xs mt-0.5">Analyzing spectral energy...</p>
+
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800/60 space-y-2">
+                <span class="text-xs text-slate-500 block uppercase">Spectral & Tonal Profile (MFCC Summary)</span>
+                <p id="resMfcc" class="text-xs font-mono text-slate-300 break-words leading-relaxed"></p>
             </div>
         </div>
     </div>
 
     <script>
-        let audioContext = null;
-        const fileInput = document.getElementById('audioFileInput');
-        const statusLabel = document.getElementById('statusLabel');
-        const resultsPanel = document.getElementById('resultsPanel');
-        const fileNameEl = document.getElementById('fileName');
-        const trackBpmEl = document.getElementById('trackBpm');
-        const trackStyleEl = document.getElementById('trackStyle');
-        const freqProfileEl = document.getElementById('freqProfile');
-        const genreSelect = document.getElementById('genreSelect');
+        async function analyzeAudio() {
+            const fileInput = document.getElementById('audioFile');
+            const apiUrl = document.getElementById('apiUrl').value;
+            const loader = document.getElementById('loader');
+            const resultContainer = document.getElementById('resultContainer');
 
-        fileInput.addEventListener('change', async (event) => {
-            const file = event.target.files?.[0];
-            if (!file) return;
+            if (fileInput.files.length === 0) {
+                alert('Please select an audio file first.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            loader.classList.remove('hidden');
+            resultContainer.classList.add('hidden');
 
             try {
-                // Initialize AudioContext safely for mobile
-                if (!audioContext) {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                if (audioContext.state === 'suspended') {
-                    await audioContext.resume();
-                }
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    body: formData
+                });
 
-                // Update UI Loading State
-                statusLabel.textContent = 'Processing pipeline...';
-                resultsPanel.classList.remove('hidden');
-                fileNameEl.textContent = file.name;
-                trackBpmEl.textContent = 'Analyzing...';
-                trackStyleEl.textContent = genreSelect.options[genreSelect.selectedIndex].text.split(' ')[0];
-                freqProfileEl.textContent = 'Scanning audio buffers...';
+                if (!response.ok) throw new Error('Analysis failed on server.');
 
-                // Pipeline Step 1: Read File ArrayBuffer
-                const arrayBuffer = await readFileAsArrayBuffer(file);
+                const data = await response.json();
+                
+                // Populate fields (adjust keys based on your FastAPI response schema)
+                document.getElementById('resBpm').innerText = Math.round(data.tempo || data.BPM || 120);
+                document.getElementById('resDuration').innerText = `${(data.duration || 0).toFixed(2)}s`;
+                document.getElementById('resMfcc').innerText = JSON.stringify(data.mfcc_mean || data, null, 2);
 
-                // Pipeline Step 2: Decode Audio Data
-                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-
-                // Pipeline Step 3: Run Feature Extractors Concurrently
-                const bpmPromise = window.webAudioBeatDetector.analyze(audioBuffer).catch(() => null);
-                const spectralProfile = analyzeSpectralEnergy(audioBuffer);
-
-                const detectedBpm = await bpmPromise;
-
-                // Pipeline Step 4: Render Categorized Results
-                trackBpmEl.textContent = detectedBpm ? Math.round(detectedBpm) : 'Estimated (Check transients)';
-                freqProfileEl.textContent = spectralProfile;
-
-                statusLabel.textContent = 'Upload Another Track';
+                resultContainer.classList.remove('hidden');
             } catch (error) {
-                console.error('Pipeline failed:', error);
-                statusLabel.textContent = 'Upload Track for Analysis';
-                resultsPanel.classList.add('hidden');
-                fileInput.value = '';
-            }
-        });
-
-        function readFileAsArrayBuffer(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = (error) => reject(error);
-                reader.readAsArrayBuffer(file);
-            });
-        }
-
-        function analyzeSpectralEnergy(buffer) {
-            // Basic client-side heuristic analyzing channel data energy distribution
-            const channelData = buffer.getChannelData(0);
-            let sumSquares = 0;
-            for (let i = 0; i < channelData.length; i += 100) { // sampled for performance
-                sumSquares += channelData[i] ** 2;
-            }
-            const rms = Math.sqrt(sumSquares / (channelData.length / 100));
-            
-            if (rms > 0.15) {
-                return "High RMS / Compressed Master Profile (Heavy limiter detected)";
-            } else if (rms > 0.08) {
-                return "Balanced Dynamic Mix Profile (Good headroom)";
-            } else {
-                return "Wide Dynamic Range / Unmastered Mix Track";
+                alert('Error connecting to backend: ' + error.message);
+            } finally {
+                loader.classList.add('hidden');
             }
         }
     </script>
